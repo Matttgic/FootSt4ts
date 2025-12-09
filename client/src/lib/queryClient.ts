@@ -29,7 +29,40 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const res = await fetch(queryKey.join("/") as string, {
+    const [basePath, ...params] = queryKey as string[];
+    
+    let url = basePath;
+    
+    if (params.length > 0) {
+      if (basePath.includes('/form/') || basePath.includes('/stats/')) {
+        url = basePath;
+        const queryParams = new URLSearchParams();
+        if (params[0]) queryParams.set('period', String(params[0]));
+        if (params[1]) queryParams.set('league', String(params[1]));
+        if (params[2]) queryParams.set('season', String(params[2]));
+        const qs = queryParams.toString();
+        if (qs) url += `?${qs}`;
+      } else if (basePath === '/api/football/stats/merged') {
+        const queryParams = new URLSearchParams();
+        if (params[0]) queryParams.set('league', String(params[0]));
+        if (params[1]) queryParams.set('season', String(params[1]));
+        url = `${basePath}?${queryParams.toString()}`;
+      } else if (basePath === '/api/football/players/search') {
+        const queryParams = new URLSearchParams();
+        if (params[0]) queryParams.set('league', String(params[0]));
+        if (params[1]) queryParams.set('season', String(params[1]));
+        if (params[2]) queryParams.set('search', String(params[2]));
+        url = `${basePath}?${queryParams.toString()}`;
+      } else if (basePath === '/api/football/fixtures/date') {
+        const queryParams = new URLSearchParams();
+        if (params[0]) queryParams.set('date', String(params[0]));
+        if (params[1]) queryParams.set('league', String(params[1]));
+        if (params[2]) queryParams.set('season', String(params[2]));
+        url = `${basePath}?${queryParams.toString()}`;
+      }
+    }
+    
+    const res = await fetch(url, {
       credentials: "include",
     });
 
@@ -47,8 +80,8 @@ export const queryClient = new QueryClient({
       queryFn: getQueryFn({ on401: "throw" }),
       refetchInterval: false,
       refetchOnWindowFocus: false,
-      staleTime: Infinity,
-      retry: false,
+      staleTime: 5 * 60 * 1000,
+      retry: 1,
     },
     mutations: {
       retry: false,
