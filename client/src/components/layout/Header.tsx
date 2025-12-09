@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Moon, Sun, Globe, BarChart3, TrendingUp, Calendar } from "lucide-react";
+import { Moon, Sun, Globe, BarChart3, TrendingUp, Calendar, Heart, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -38,6 +38,8 @@ export function Header() {
     { path: "/", label: t(language, 'nav.globalStats'), icon: BarChart3 },
     { path: "/form", label: t(language, 'nav.playerForm'), icon: TrendingUp },
     { path: "/matches", label: t(language, 'nav.todayMatches'), icon: Calendar },
+    { path: "/donate", label: t(language, 'nav.donate'), icon: Heart },
+    { path: "/contact", label: t(language, 'nav.contact'), icon: Mail },
   ];
 
   const handleTier2Toggle = () => {

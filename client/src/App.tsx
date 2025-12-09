@@ -5,11 +5,14 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Header } from "@/components/layout/Header";
+import { Footer } from "@/components/layout/Footer";
 import { UsageBanner } from "@/components/layout/UsageBanner";
 import { useAppStore } from "@/stores/appStore";
 import GlobalStats from "@/pages/GlobalStats";
 import PlayerForm from "@/pages/PlayerForm";
 import TodayMatches from "@/pages/TodayMatches";
+import Donate from "@/pages/Donate";
+import Contact from "@/pages/Contact";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -18,6 +21,8 @@ function Router() {
       <Route path="/" component={GlobalStats} />
       <Route path="/form" component={PlayerForm} />
       <Route path="/matches" component={TodayMatches} />
+      <Route path="/donate" component={Donate} />
+      <Route path="/contact" component={Contact} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -49,12 +54,13 @@ function AppContent() {
   }, [setTheme]);
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground flex flex-col">
       <Header />
       <UsageBanner />
-      <main>
+      <main className="flex-1">
         <Router />
       </main>
+      <Footer />
     </div>
   );
 }

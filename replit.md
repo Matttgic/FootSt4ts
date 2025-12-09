@@ -34,12 +34,14 @@ A production-ready web application for football statistics and player probabilit
 - `client/src/stores/appStore.ts` - Zustand store for language, theme, filters, favorites
 
 ### Pages
-- `client/src/pages/GlobalStats.tsx` - Top scorers/assisters table
-- `client/src/pages/PlayerForm.tsx` - Player form analysis
-- `client/src/pages/TodayMatches.tsx` - Today's fixtures
+- `client/src/pages/GlobalStats.tsx` - Top scorers/assisters table with Decisive stats
+- `client/src/pages/PlayerForm.tsx` - Player form analysis with Auto Top 10 and streak detection
+- `client/src/pages/TodayMatches.tsx` - Today's fixtures with probability calculations
+- `client/src/pages/Donate.tsx` - BuyMeACoffee donation support page
+- `client/src/pages/Contact.tsx` - Contact/feedback form
 
 ### Components
-- `client/src/components/layout/` - Header, UsageWidget, Tier2Dialog
+- `client/src/components/layout/` - Header, Footer, UsageWidget, Tier2Dialog
 - `client/src/components/shared/` - Reusable UI components
 
 ## API Routes
@@ -54,6 +56,7 @@ GET /api/football/players/search?league={id}&season={year}&search={query} - Play
 GET /api/football/players/form/:id?period={5|10}&season={year} - Player form data
 GET /api/football/players/stats/:id?league={id}&season={year} - Player season stats
 GET /api/football/fixtures/date?date={YYYY-MM-DD}&league={id}&season={year} - Fixtures by date
+POST /api/contact - Submit contact/feedback form
 ```
 
 ## Dynamic Season Detection
@@ -86,8 +89,18 @@ The app follows the design_guidelines.md file for:
 - Skeleton loading states
 - Color-coded probabilities (green > 70%, amber > 40%, red < 40%)
 
-## Recent Changes
+## Recent Changes (December 2025)
 
+### Latest
+- Added Donate page with BuyMeACoffee integration
+- Added Contact page with feedback form and backend endpoint
+- Added Footer component with legal disclaimer about betting
+- Fixed Badge component to use React.forwardRef for proper ref handling
+- Updated navigation with Donate and Contact links
+- Added comprehensive i18n translations for all new pages (EN/FR)
+- Added legal disclaimers on Today's Matches page (probabilities are statistical only, not betting advice)
+
+### Previous
 - Fixed data fetching issues - all pages now show real player statistics
 - Implemented dynamic season detection via `/api/football/leagues` endpoint
 - Added debug info display in dev mode (leagueId, season, scorersCount, assistersCount)

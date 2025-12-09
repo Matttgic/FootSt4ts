@@ -321,7 +321,10 @@ export default function TodayMatches() {
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-2xl md:text-3xl font-bold">{t(language, 'matches.title')}</h1>
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold">{t(language, 'matches.title')}</h1>
+          <p className="text-sm text-muted-foreground mt-1">{t(language, 'matches.description')}</p>
+        </div>
         
         <Popover>
           <PopoverTrigger asChild>
@@ -398,11 +401,19 @@ export default function TodayMatches() {
       )}
 
       {!isLoading && !error && matches && matches.length > 0 && (
-        <div className="grid gap-4 md:grid-cols-2">
-          {matches.map((match) => (
-            <MatchCard key={match.fixture.fixture.id} match={match} />
-          ))}
-        </div>
+        <>
+          <Alert className="bg-amber-500/10 border-amber-500/20">
+            <AlertCircle className="h-4 w-4 text-amber-500" />
+            <AlertDescription className="text-amber-600 dark:text-amber-400">
+              {t(language, 'matches.disclaimer')}
+            </AlertDescription>
+          </Alert>
+          <div className="grid gap-4 md:grid-cols-2">
+            {matches.map((match) => (
+              <MatchCard key={match.fixture.fixture.id} match={match} />
+            ))}
+          </div>
+        </>
       )}
     </div>
   );

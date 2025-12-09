@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, TrendingUp, Target, Users, Clock, Flame, AlertCircle } from "lucide-react";
+import { Search, TrendingUp, Target, Users, Clock, Flame, AlertCircle, ArrowUpDown, ArrowUp, ArrowDown, Trophy } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,28 @@ import { t } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { calculatePlayerProbability } from "@/lib/probability";
 import type { PlayerFormData, MergedPlayerStats } from "@shared/schema";
+
+interface TopFormPlayer {
+  playerId: number;
+  playerName: string;
+  playerPhoto: string;
+  teamId: number;
+  teamName: string;
+  teamLogo: string;
+  goals: number;
+  assists: number;
+  decisive: number;
+  matches: number;
+  minutes: number;
+  goalsPer90: number;
+  assistsPer90: number;
+  decisivePer90: number;
+  decisiveRatio: number;
+  goalStreak: number;
+  decisiveStreak: number;
+}
+
+type TopFormSortField = 'goals' | 'assists' | 'decisive' | 'decisivePer90' | 'decisiveRatio';
 import {
   LineChart,
   Line,
@@ -82,6 +104,42 @@ export default function PlayerForm() {
     }
     return selectedSeason;
   }, [leagueInfo, selectedSeason]);
+
+  const [topFormSortField, setTopFormSortField] = useState<TopFormSortField>('decisivePer90');
+  const [topFormSortDir, setTopFormSortDir] = useState<'asc' | 'desc'>('desc');
+
+  const { data: topFormPlayers, isLoading: isLoadingTopForm } = useQuery<TopFormPlayer[]>({
+    queryKey: ['/api/football/players/top-form', selectedCompetitionId, effectiveSeason],
+    enabled: !!effectiveSeason,
+    staleTime: 30 * 60 * 1000,
+  });
+
+  const sortedTopFormPlayers = useMemo(() => {
+    if (!topFormPlayers) return [];
+    return [...topFormPlayers].sort((a, b) => {
+      const aVal = a[topFormSortField];
+      const bVal = b[topFormSortField];
+      return topFormSortDir === 'desc' ? bVal - aVal : aVal - bVal;
+    });
+  }, [topFormPlayers, topFormSortField, topFormSortDir]);
+
+  const handleTopFormSort = (field: TopFormSortField) => {
+    if (topFormSortField === field) {
+      setTopFormSortDir(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setTopFormSortField(field);
+      setTopFormSortDir('desc');
+    }
+  };
+
+  const renderTopFormSortIcon = (field: TopFormSortField) => {
+    if (topFormSortField !== field) {
+      return <ArrowUpDown className="w-3 h-3 ml-1 opacity-50" />;
+    }
+    return topFormSortDir === 'asc' 
+      ? <ArrowUp className="w-3 h-3 ml-1" /> 
+      : <ArrowDown className="w-3 h-3 ml-1" />;
+  };
 
   const { data: searchResults, isLoading: isSearching, error: searchError } = useQuery<any[]>({
     queryKey: ['/api/football/players/search', selectedCompetitionId, effectiveSeason, debouncedSearch],
@@ -148,7 +206,10 @@ export default function PlayerForm() {
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-2xl md:text-3xl font-bold">{t(language, 'form.title')}</h1>
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold">{t(language, 'form.title')}</h1>
+          <p className="text-sm text-muted-foreground mt-1">{t(language, 'form.description')}</p>
+        </div>
         <Tabs value={formPeriod.toString()} onValueChange={(v) => setFormPeriod(Number(v) as 5 | 10)}>
           <TabsList>
             <TabsTrigger value="5" data-testid="period-5">{t(language, 'form.games5')}</TabsTrigger>
@@ -223,10 +284,145 @@ export default function PlayerForm() {
       </div>
 
       {!selectedPlayerId && !playerForm && (
-        <EmptyState 
-          message={t(language, 'form.searchPlayer')}
-          icon={<Search className="w-12 h-12 text-muted-foreground" />}
-        />
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Trophy className="w-5 h-5 text-amber-500" />
+              {t(language, 'form.top10Title')}
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">{t(language, 'form.top10Desc')}</p>
+          </CardHeader>
+          <CardContent>
+            {isLoadingTopForm ? (
+              <div className="space-y-3">
+                {[1, 2, 3, 4, 5].map(i => (
+                  <div key={i} className="flex items-center gap-3">
+                    <Skeleton className="w-8 h-8 rounded-full" />
+                    <Skeleton className="w-32 h-4" />
+                    <Skeleton className="w-16 h-4 ml-auto" />
+                  </div>
+                ))}
+              </div>
+            ) : sortedTopFormPlayers.length > 0 ? (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-12">#</TableHead>
+                      <TableHead>{t(language, 'common.player')}</TableHead>
+                      <TableHead>{t(language, 'common.team')}</TableHead>
+                      <TableHead 
+                        className="text-center cursor-pointer select-none" 
+                        onClick={() => handleTopFormSort('goals')}
+                        data-testid="sort-goals"
+                      >
+                        <span className="flex items-center justify-center">
+                          {t(language, 'common.goals')}
+                          {renderTopFormSortIcon('goals')}
+                        </span>
+                      </TableHead>
+                      <TableHead 
+                        className="text-center cursor-pointer select-none" 
+                        onClick={() => handleTopFormSort('assists')}
+                        data-testid="sort-assists"
+                      >
+                        <span className="flex items-center justify-center">
+                          {t(language, 'common.assists')}
+                          {renderTopFormSortIcon('assists')}
+                        </span>
+                      </TableHead>
+                      <TableHead 
+                        className="text-center cursor-pointer select-none" 
+                        onClick={() => handleTopFormSort('decisive')}
+                        data-testid="sort-decisive"
+                      >
+                        <span className="flex items-center justify-center">
+                          G+A
+                          {renderTopFormSortIcon('decisive')}
+                        </span>
+                      </TableHead>
+                      <TableHead 
+                        className="text-center cursor-pointer select-none" 
+                        onClick={() => handleTopFormSort('decisivePer90')}
+                        data-testid="sort-decisive-per90"
+                      >
+                        <span className="flex items-center justify-center">
+                          {t(language, 'stats.decisivePer90')}
+                          {renderTopFormSortIcon('decisivePer90')}
+                        </span>
+                      </TableHead>
+                      <TableHead 
+                        className="text-center cursor-pointer select-none" 
+                        onClick={() => handleTopFormSort('decisiveRatio')}
+                        data-testid="sort-decisive-ratio"
+                      >
+                        <span className="flex items-center justify-center">
+                          {t(language, 'stats.decisiveRatio')}
+                          {renderTopFormSortIcon('decisiveRatio')}
+                        </span>
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {sortedTopFormPlayers.map((player, index) => (
+                      <TableRow 
+                        key={player.playerId} 
+                        className="cursor-pointer hover-elevate"
+                        onClick={() => setSelectedPlayerId(player.playerId)}
+                        data-testid={`top-form-row-${player.playerId}`}
+                      >
+                        <TableCell className="font-mono text-muted-foreground">{index + 1}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <PlayerAvatar 
+                              name={player.playerName} 
+                              photo={player.playerPhoto}
+                              size="sm"
+                            />
+                            <span className="font-medium">{player.playerName}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <TeamLogo 
+                              name={player.teamName} 
+                              logo={player.teamLogo}
+                              size="sm"
+                            />
+                            <span className="text-muted-foreground text-sm hidden sm:inline">{player.teamName}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-center font-mono text-green-500">{player.goals}</TableCell>
+                        <TableCell className="text-center font-mono text-blue-500">{player.assists}</TableCell>
+                        <TableCell className="text-center font-mono font-bold">{player.decisive}</TableCell>
+                        <TableCell className="text-center font-mono">{player.decisivePer90.toFixed(2)}</TableCell>
+                        <TableCell className="text-center">
+                          <Badge 
+                            variant="outline" 
+                            className={cn(
+                              player.decisiveRatio >= 0.7 
+                                ? "bg-green-500/10 text-green-500 border-green-500/20"
+                                : player.decisiveRatio >= 0.4
+                                  ? "bg-amber-500/10 text-amber-500 border-amber-500/20"
+                                  : "bg-muted text-muted-foreground"
+                            )}
+                          >
+                            {(player.decisiveRatio * 100).toFixed(0)}%
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            ) : (
+              <EmptyState 
+                message={t(language, 'common.noData')}
+                icon={<Trophy className="w-12 h-12 text-muted-foreground" />}
+              />
+            )}
+          </CardContent>
+        </Card>
       )}
 
       {selectedPlayerId && formError && (

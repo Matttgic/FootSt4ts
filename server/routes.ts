@@ -646,6 +646,133 @@ export async function registerRoutes(
     }
   });
 
+  app.get('/api/football/players/top-form', async (req: Request, res: Response) => {
+    try {
+      const league = req.query.league as string;
+      const season = req.query.season as string;
+
+      if (!league || !season) {
+        return res.status(400).json({ error: 'Missing required parameters: league and season' });
+      }
+
+      const cacheKey = `top-form-${league}-${season}`;
+      const cachedData = cache.get(cacheKey);
+      if (cachedData) {
+        console.log('[/api/football/players/top-form] Cache hit');
+        return res.json(cachedData);
+      }
+
+      console.log(`[/api/football/players/top-form] Fetching for league=${league}, season=${season}`);
+
+      const [scorersResult, assistersResult] = await Promise.all([
+        fetchFromApiFootball('players/topscorers', { league, season }),
+        fetchFromApiFootball('players/topassists', { league, season }),
+      ]);
+
+      if (scorersResult.error && assistersResult.error) {
+        return res.status(scorersResult.status || 500).json({ 
+          error: 'Failed to fetch top players data',
+        });
+      }
+
+      const scorers = scorersResult.data?.response || [];
+      const assisters = assistersResult.data?.response || [];
+      
+      const playerMap = new Map<number, any>();
+      
+      for (const item of scorers.slice(0, 10)) {
+        const stats = item.statistics[0] || {};
+        const goals = stats.goals?.total || 0;
+        const assists = stats.goals?.assists || 0;
+        const matches = stats.games?.appearences || 0;
+        const minutes = stats.games?.minutes || 0;
+        
+        playerMap.set(item.player.id, {
+          playerId: item.player.id,
+          playerName: item.player.name,
+          playerPhoto: item.player.photo,
+          teamId: stats.team?.id,
+          teamName: stats.team?.name,
+          teamLogo: stats.team?.logo,
+          goals,
+          assists,
+          decisive: goals + assists,
+          matches,
+          minutes,
+          goalsPer90: minutes > 0 ? (goals / minutes) * 90 : 0,
+          assistsPer90: minutes > 0 ? (assists / minutes) * 90 : 0,
+          decisivePer90: minutes > 0 ? ((goals + assists) / minutes) * 90 : 0,
+          decisiveRatio: matches > 0 ? Math.min(1, (goals + assists) / matches) : 0,
+          goalStreak: 0,
+          decisiveStreak: 0,
+        });
+      }
+      
+      for (const item of assisters.slice(0, 10)) {
+        if (!playerMap.has(item.player.id)) {
+          const stats = item.statistics[0] || {};
+          const goals = stats.goals?.total || 0;
+          const assists = stats.goals?.assists || 0;
+          const matches = stats.games?.appearences || 0;
+          const minutes = stats.games?.minutes || 0;
+          
+          playerMap.set(item.player.id, {
+            playerId: item.player.id,
+            playerName: item.player.name,
+            playerPhoto: item.player.photo,
+            teamId: stats.team?.id,
+            teamName: stats.team?.name,
+            teamLogo: stats.team?.logo,
+            goals,
+            assists,
+            decisive: goals + assists,
+            matches,
+            minutes,
+            goalsPer90: minutes > 0 ? (goals / minutes) * 90 : 0,
+            assistsPer90: minutes > 0 ? (assists / minutes) * 90 : 0,
+            decisivePer90: minutes > 0 ? ((goals + assists) / minutes) * 90 : 0,
+            decisiveRatio: matches > 0 ? Math.min(1, (goals + assists) / matches) : 0,
+            goalStreak: 0,
+            decisiveStreak: 0,
+          });
+        }
+      }
+      
+      const topPlayers = Array.from(playerMap.values())
+        .sort((a, b) => b.decisivePer90 - a.decisivePer90)
+        .slice(0, 10);
+
+      cache.set(cacheKey, topPlayers, 1800);
+
+      res.json(topPlayers);
+    } catch (error: any) {
+      console.error('[/api/football/players/top-form] Exception:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post('/api/contact', (req: Request, res: Response) => {
+    try {
+      const { name, email, message } = req.body;
+      
+      if (!message || !message.trim()) {
+        return res.status(400).json({ error: 'Message is required' });
+      }
+      
+      console.log('[Contact Form]', {
+        name: name || 'Anonymous',
+        email: email || 'No email',
+        message: message.substring(0, 100) + (message.length > 100 ? '...' : ''),
+        timestamp: new Date().toISOString(),
+      });
+      
+      res.json({ success: true, message: 'Message received' });
+    } catch (error: any) {
+      console.error('[/api/contact] Exception:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   return httpServer;
 }
 

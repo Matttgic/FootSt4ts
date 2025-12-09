@@ -25,8 +25,25 @@ import { t } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import type { MergedPlayerStats } from "@shared/schema";
 
-type SortField = 'goals' | 'assists' | 'matches' | 'minutes' | 'goalsPer90' | 'assistsPer90';
+type SortField = 'goals' | 'assists' | 'decisive' | 'decisivePer90' | 'matches' | 'minutes' | 'goalsPer90' | 'assistsPer90';
 type SortDirection = 'asc' | 'desc';
+
+interface ExtendedPlayerStats {
+  playerId: number;
+  playerName: string;
+  playerPhoto: string;
+  teamId: number;
+  teamName: string;
+  teamLogo: string;
+  goals: number;
+  assists: number;
+  decisive: number;
+  decisivePer90: number;
+  matches: number;
+  minutes: number;
+  goalsPer90: number;
+  assistsPer90: number;
+}
 
 interface MergedStatsResponse {
   data: MergedPlayerStats[];
@@ -59,6 +76,8 @@ export default function GlobalStats() {
     { id: 'club', label: t(language, 'common.club'), visible: true, required: true },
     { id: 'goals', label: t(language, 'common.goals'), visible: true },
     { id: 'assists', label: t(language, 'common.assists'), visible: true },
+    { id: 'decisive', label: t(language, 'common.decisive'), visible: true },
+    { id: 'decisivePer90', label: t(language, 'common.decisivePer90'), visible: true },
     { id: 'matches', label: t(language, 'common.matches'), visible: true },
     { id: 'minutes', label: t(language, 'common.minutes'), visible: false },
     { id: 'goalsPer90', label: t(language, 'common.goalsPer90'), visible: true },
@@ -91,10 +110,21 @@ export default function GlobalStats() {
     enabled: !!effectiveSeason,
   });
 
-  const players = useMemo(() => {
+  const players = useMemo((): ExtendedPlayerStats[] => {
     if (!response) return [];
-    if (Array.isArray(response)) return response as MergedPlayerStats[];
-    return response.data || [];
+    const rawPlayers = Array.isArray(response) ? response as MergedPlayerStats[] : response.data || [];
+    
+    return rawPlayers.map(player => {
+      const decisive = player.goals + player.assists;
+      const minutesPlayed = player.minutes || 1;
+      const decisivePer90 = (decisive / minutesPlayed) * 90;
+      
+      return {
+        ...player,
+        decisive,
+        decisivePer90,
+      } as ExtendedPlayerStats;
+    });
   }, [response]);
 
   const meta = useMemo(() => {
@@ -127,8 +157,8 @@ export default function GlobalStats() {
     }
     
     return filtered.sort((a, b) => {
-      const aValue = a[sortField];
-      const bValue = b[sortField];
+      const aValue = a[sortField] as number;
+      const bValue = b[sortField] as number;
       const multiplier = sortDirection === 'asc' ? 1 : -1;
       return (aValue - bValue) * multiplier;
     });
@@ -170,7 +200,10 @@ export default function GlobalStats() {
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-2xl md:text-3xl font-bold">{t(language, 'stats.title')}</h1>
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold">{t(language, 'stats.title')}</h1>
+          <p className="text-sm text-muted-foreground mt-1">{t(language, 'stats.description')}</p>
+        </div>
         <div className="flex items-center gap-3 flex-wrap">
           <FavoritesFilter />
           <ColumnVisibilityMenu columns={columns} onToggle={toggleColumn} />
@@ -248,6 +281,34 @@ export default function GlobalStats() {
                         >
                           {t(language, 'common.assists')}
                           <SortIcon field="assists" />
+                        </Button>
+                      </TableHead>
+                    )}
+                    {isColumnVisible('decisive') && (
+                      <TableHead>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-auto p-0 font-medium hover:bg-transparent"
+                          onClick={() => handleSort('decisive')}
+                          data-testid="sort-decisive"
+                        >
+                          {t(language, 'common.decisive')}
+                          <SortIcon field="decisive" />
+                        </Button>
+                      </TableHead>
+                    )}
+                    {isColumnVisible('decisivePer90') && (
+                      <TableHead>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-auto p-0 font-medium hover:bg-transparent"
+                          onClick={() => handleSort('decisivePer90')}
+                          data-testid="sort-decisive-per-90"
+                        >
+                          {t(language, 'common.decisivePer90')}
+                          <SortIcon field="decisivePer90" />
                         </Button>
                       </TableHead>
                     )}
@@ -348,6 +409,12 @@ export default function GlobalStats() {
                         )}
                         {isColumnVisible('assists') && (
                           <TableCell className="font-mono font-medium">{player.assists}</TableCell>
+                        )}
+                        {isColumnVisible('decisive') && (
+                          <TableCell className="font-mono font-medium text-amber-500">{player.decisive}</TableCell>
+                        )}
+                        {isColumnVisible('decisivePer90') && (
+                          <TableCell className="font-mono text-amber-500">{player.decisivePer90.toFixed(2)}</TableCell>
                         )}
                         {isColumnVisible('matches') && (
                           <TableCell className="font-mono">{player.matches}</TableCell>

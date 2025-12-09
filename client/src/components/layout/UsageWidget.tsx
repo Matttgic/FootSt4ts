@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Activity } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -19,9 +20,11 @@ export function UsageWidget() {
     refetchInterval: 30000,
   });
 
-  if (data && data.callsToday !== apiUsage.callsToday) {
-    updateApiUsage(data);
-  }
+  useEffect(() => {
+    if (data && data.callsToday !== apiUsage.callsToday) {
+      updateApiUsage(data);
+    }
+  }, [data, apiUsage.callsToday, updateApiUsage]);
 
   const usage = data || apiUsage;
   const percentage = Math.round(usage.percentage * 100);
