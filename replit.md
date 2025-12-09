@@ -102,12 +102,19 @@ The app follows the design_guidelines.md file for:
 ## Recent Changes (December 2025)
 
 ### Latest
+- **Top 10 Form improvements**:
+  - Period toggle (5/10 matches) now included in query key - changes cached data correctly
+  - Added "Decisive %" column with tooltip explaining it's the probability of being decisive per match
+  - Badge shows current period selection (Last 5 matches / Last 10 matches)
+  - Updated descriptions to clarify: Top 10 shows projections, click player for actual match data
+- Contact form security: Rate limiting (5/hour per IP) and input sanitization added
 - Updated Donate page with Ko-fi (https://ko-fi.com/footst4ts) and PayPal (https://paypal.me/M0012) buttons
 - Contact form now sends to backend proxy (/api/contact) - email not exposed on frontend
-- Fixed Top 10 Form Players bug: queryClient now properly passes league/season parameters
-- Added `isSeasonFallback` indicator to show when using season aggregate stats
-- Added i18n messages for form data fallback states (EN/FR)
-- Top 10 Form uses season stats (decisivePer90) for API efficiency (2 calls vs ~62 for recent match data)
+
+### Design Decisions
+- **True Last-N Match Data**: Top 10 Form now fetches ACTUAL per-fixture player stats via `/fixtures/players` API for the top 10 candidates. Goals, assists, and decisive ratio are computed from real match data (not season averages).
+- **Aggressive Caching for API Efficiency**: Team fixtures cached 1 hour, fixture/player data cached 24 hours, computed player form cached 30 minutes. This limits API calls to ~2 initial calls + up to 10×N fixture/player calls per cache miss (with aggressive caching, typically <50 calls/hour).
+- **Fallback Indicator**: `isRealData` flag distinguishes actual match data from season-based estimates. Fallback only shows if <5 players have real data.
 
 ### Previous
 - Added Donate page with donation links

@@ -71,6 +71,7 @@ export const getQueryFn: <T>(options: {
         const queryParams = new URLSearchParams();
         if (params[0]) queryParams.set('league', String(params[0]));
         if (params[1]) queryParams.set('season', String(params[1]));
+        if (params[2]) queryParams.set('period', String(params[2]));
         url = `${basePath}?${queryParams.toString()}`;
       }
     }

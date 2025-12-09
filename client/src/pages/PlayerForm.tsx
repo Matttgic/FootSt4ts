@@ -45,6 +45,7 @@ interface TopFormPlayer {
   decisiveRatio: number;
   goalStreak: number;
   decisiveStreak: number;
+  period: number;
 }
 
 type TopFormSortField = 'goals' | 'assists' | 'decisive' | 'decisivePer90' | 'decisiveRatio';
@@ -108,8 +109,8 @@ export default function PlayerForm() {
   const [topFormSortField, setTopFormSortField] = useState<TopFormSortField>('decisivePer90');
   const [topFormSortDir, setTopFormSortDir] = useState<'asc' | 'desc'>('desc');
 
-  const { data: topFormData, isLoading: isLoadingTopForm } = useQuery<{ players: TopFormPlayer[]; isSeasonFallback: boolean }>({
-    queryKey: ['/api/football/players/top-form', selectedCompetitionId, effectiveSeason],
+  const { data: topFormData, isLoading: isLoadingTopForm } = useQuery<{ players: TopFormPlayer[]; isSeasonFallback: boolean; period: number }>({
+    queryKey: ['/api/football/players/top-form', selectedCompetitionId, effectiveSeason, formPeriod],
     enabled: !!effectiveSeason,
     staleTime: 30 * 60 * 1000,
   });
@@ -292,6 +293,9 @@ export default function PlayerForm() {
             <CardTitle className="flex items-center gap-2">
               <Trophy className="w-5 h-5 text-amber-500" />
               {t(language, 'form.top10Title')}
+              <Badge variant="outline" className="ml-2 text-xs">
+                {language === 'fr' ? `${formPeriod} derniers matchs` : `Last ${formPeriod} matches`}
+              </Badge>
             </CardTitle>
             <p className="text-sm text-muted-foreground">{t(language, 'form.top10Desc')}</p>
             {isSeasonFallback && !isLoadingTopForm && sortedTopFormPlayers.length > 0 && (
@@ -364,9 +368,11 @@ export default function PlayerForm() {
                         className="text-center cursor-pointer select-none" 
                         onClick={() => handleTopFormSort('decisiveRatio')}
                         data-testid="sort-decisive-ratio"
+                        title={t(language, 'form.decisiveRatioTooltip')}
                       >
-                        <span className="flex items-center justify-center">
-                          {t(language, 'stats.decisiveRatio')}
+                        <span className="flex items-center justify-center gap-1">
+                          {t(language, 'form.decisiveRatio')}
+                          <Info className="w-3 h-3 text-muted-foreground" />
                           {renderTopFormSortIcon('decisiveRatio')}
                         </span>
                       </TableHead>

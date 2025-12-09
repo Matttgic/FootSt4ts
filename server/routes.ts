@@ -650,19 +650,21 @@ export async function registerRoutes(
     try {
       const league = req.query.league as string;
       const season = req.query.season as string;
+      const period = parseInt(req.query.period as string) || 5;
+      const n = period === 10 ? 10 : 5;
 
       if (!league || !season) {
         return res.status(400).json({ error: 'Missing required parameters: league and season' });
       }
 
-      const cacheKey = `top-form-${league}-${season}`;
-      const cachedData = cache.get(cacheKey) as { players: any[]; isSeasonFallback: boolean } | undefined;
+      const cacheKey = `top-form-${league}-${season}-${n}`;
+      const cachedData = cache.get(cacheKey) as { players: any[]; isSeasonFallback: boolean; period: number } | undefined;
       if (cachedData) {
         console.log('[/api/football/players/top-form] Cache hit');
         return res.json(cachedData);
       }
 
-      console.log(`[/api/football/players/top-form] Fetching for league=${league}, season=${season}`);
+      console.log(`[/api/football/players/top-form] Fetching for league=${league}, season=${season}, period=${n}`);
 
       const [scorersResult, assistersResult] = await Promise.all([
         fetchFromApiFootball('players/topscorers', { league, season }),
@@ -678,73 +680,241 @@ export async function registerRoutes(
       const scorers = scorersResult.data?.response || [];
       const assisters = assistersResult.data?.response || [];
       
-      const playerMap = new Map<number, any>();
+      const candidatePlayers: Array<{
+        playerId: number;
+        playerName: string;
+        playerPhoto: string;
+        teamId: number;
+        teamName: string;
+        teamLogo: string;
+        seasonGoals: number;
+        seasonAssists: number;
+        seasonMatches: number;
+        seasonMinutes: number;
+      }> = [];
       
-      for (const item of scorers.slice(0, 10)) {
-        const stats = item.statistics[0] || {};
-        const goals = stats.goals?.total || 0;
-        const assists = stats.goals?.assists || 0;
-        const matches = stats.games?.appearences || 0;
-        const minutes = stats.games?.minutes || 0;
+      const seenIds = new Set<number>();
+      
+      for (const item of [...scorers.slice(0, 15), ...assisters.slice(0, 15)]) {
+        if (seenIds.has(item.player.id)) continue;
+        seenIds.add(item.player.id);
         
-        playerMap.set(item.player.id, {
+        const stats = item.statistics[0] || {};
+        candidatePlayers.push({
           playerId: item.player.id,
           playerName: item.player.name,
           playerPhoto: item.player.photo,
           teamId: stats.team?.id,
           teamName: stats.team?.name,
           teamLogo: stats.team?.logo,
-          goals,
-          assists,
-          decisive: goals + assists,
-          matches,
-          minutes,
-          goalsPer90: minutes > 0 ? (goals / minutes) * 90 : 0,
-          assistsPer90: minutes > 0 ? (assists / minutes) * 90 : 0,
-          decisivePer90: minutes > 0 ? ((goals + assists) / minutes) * 90 : 0,
-          decisiveRatio: matches > 0 ? Math.min(1, (goals + assists) / matches) : 0,
-          goalStreak: 0,
-          decisiveStreak: 0,
+          seasonGoals: stats.goals?.total || 0,
+          seasonAssists: stats.goals?.assists || 0,
+          seasonMatches: stats.games?.appearences || 0,
+          seasonMinutes: stats.games?.minutes || 0,
         });
       }
       
-      for (const item of assisters.slice(0, 10)) {
-        if (!playerMap.has(item.player.id)) {
-          const stats = item.statistics[0] || {};
-          const goals = stats.goals?.total || 0;
-          const assists = stats.goals?.assists || 0;
-          const matches = stats.games?.appearences || 0;
-          const minutes = stats.games?.minutes || 0;
+      let topPlayers: any[] = [];
+      let isSeasonFallback = false;
+      
+      if (candidatePlayers.length > 0) {
+        const topCandidates = candidatePlayers
+          .filter(p => p.seasonMatches > 0)
+          .sort((a, b) => {
+            const aPer90 = a.seasonMinutes > 0 ? ((a.seasonGoals + a.seasonAssists) / a.seasonMinutes) * 90 : 0;
+            const bPer90 = b.seasonMinutes > 0 ? ((b.seasonGoals + b.seasonAssists) / b.seasonMinutes) * 90 : 0;
+            return bPer90 - aPer90;
+          })
+          .slice(0, 10);
+        
+        const playersWithRealForm: any[] = [];
+        
+        for (const player of topCandidates) {
+          const playerFormCacheKey = `player-form-real-${player.playerId}-${league}-${season}-${n}`;
+          let cachedForm = cache.get(playerFormCacheKey) as any;
           
-          playerMap.set(item.player.id, {
-            playerId: item.player.id,
-            playerName: item.player.name,
-            playerPhoto: item.player.photo,
-            teamId: stats.team?.id,
-            teamName: stats.team?.name,
-            teamLogo: stats.team?.logo,
-            goals,
-            assists,
-            decisive: goals + assists,
-            matches,
-            minutes,
-            goalsPer90: minutes > 0 ? (goals / minutes) * 90 : 0,
-            assistsPer90: minutes > 0 ? (assists / minutes) * 90 : 0,
-            decisivePer90: minutes > 0 ? ((goals + assists) / minutes) * 90 : 0,
-            decisiveRatio: matches > 0 ? Math.min(1, (goals + assists) / matches) : 0,
+          if (cachedForm) {
+            playersWithRealForm.push(cachedForm);
+            continue;
+          }
+          
+          try {
+            const teamFixturesCacheKey = `team-fixtures-${player.teamId}-${season}`;
+            let teamFixtures = cache.get(teamFixturesCacheKey) as any[];
+            
+            if (!teamFixtures) {
+              const teamFixResult = await fetchFromApiFootball('fixtures', {
+                team: player.teamId.toString(),
+                season,
+                last: '15',
+              });
+              teamFixtures = teamFixResult.data?.response || [];
+              cache.set(teamFixturesCacheKey, teamFixtures, 3600);
+            }
+            
+            const finishedFixtures = teamFixtures
+              .filter((f: any) => f.fixture?.status?.short === 'FT')
+              .sort((a: any, b: any) => new Date(b.fixture.date).getTime() - new Date(a.fixture.date).getTime())
+              .slice(0, n);
+            
+            if (finishedFixtures.length >= Math.min(n, 3)) {
+              let goalsLastN = 0;
+              let assistsLastN = 0;
+              let minutesLastN = 0;
+              let decisiveMatches = 0;
+              let matchesAnalyzed = 0;
+              
+              for (const fix of finishedFixtures) {
+                const fixturePlayersCacheKey = `fixture-players-${fix.fixture.id}`;
+                let fixturePlayers = cache.get(fixturePlayersCacheKey) as any[];
+                
+                if (!fixturePlayers) {
+                  const fpResult = await fetchFromApiFootball('fixtures/players', {
+                    fixture: fix.fixture.id.toString(),
+                  });
+                  fixturePlayers = fpResult.data?.response || [];
+                  cache.set(fixturePlayersCacheKey, fixturePlayers, 86400);
+                }
+                
+                let playerFound = false;
+                for (const team of fixturePlayers) {
+                  const playerStats = team.players?.find((p: any) => p.player?.id === player.playerId);
+                  if (playerStats) {
+                    playerFound = true;
+                    const stats = playerStats.statistics?.[0] || {};
+                    const goals = stats.goals?.total || 0;
+                    const assists = stats.goals?.assists || 0;
+                    const minutes = stats.games?.minutes || 0;
+                    
+                    if (minutes > 0) {
+                      goalsLastN += goals;
+                      assistsLastN += assists;
+                      minutesLastN += minutes;
+                      matchesAnalyzed++;
+                      if (goals > 0 || assists > 0) {
+                        decisiveMatches++;
+                      }
+                    }
+                    break;
+                  }
+                }
+              }
+              
+              if (matchesAnalyzed > 0) {
+                const totalDecisiveLastN = goalsLastN + assistsLastN;
+                const decisiveRatio = decisiveMatches / matchesAnalyzed;
+                const dPer90LastN = minutesLastN >= 45 ? (totalDecisiveLastN / minutesLastN) * 90 : 0;
+                
+                const playerForm = {
+                  playerId: player.playerId,
+                  playerName: player.playerName,
+                  playerPhoto: player.playerPhoto,
+                  teamId: player.teamId,
+                  teamName: player.teamName,
+                  teamLogo: player.teamLogo,
+                  goals: goalsLastN,
+                  assists: assistsLastN,
+                  decisive: totalDecisiveLastN,
+                  matches: matchesAnalyzed,
+                  minutes: minutesLastN,
+                  goalsPer90: minutesLastN >= 45 ? (goalsLastN / minutesLastN) * 90 : 0,
+                  assistsPer90: minutesLastN >= 45 ? (assistsLastN / minutesLastN) * 90 : 0,
+                  decisivePer90: dPer90LastN,
+                  decisiveRatio: decisiveRatio,
+                  goalStreak: 0,
+                  decisiveStreak: 0,
+                  period: n,
+                  isRealData: true,
+                };
+                
+                cache.set(playerFormCacheKey, playerForm, 1800);
+                playersWithRealForm.push(playerForm);
+                continue;
+              }
+            }
+          } catch (err) {
+            console.error(`[top-form] Error fetching real form for player ${player.playerId}:`, err);
+          }
+          
+          const { seasonGoals, seasonAssists, seasonMatches, seasonMinutes } = player;
+          const matchesInPeriod = Math.min(seasonMatches, n);
+          const goalsPerMatch = seasonGoals / seasonMatches;
+          const assistsPerMatch = seasonAssists / seasonMatches;
+          const minutesPerMatch = seasonMinutes / seasonMatches;
+          const decisivePerMatch = (seasonGoals + seasonAssists) / seasonMatches;
+          
+          const goalsLastN = goalsPerMatch * matchesInPeriod;
+          const assistsLastN = assistsPerMatch * matchesInPeriod;
+          const totalDecisiveLastN = goalsLastN + assistsLastN;
+          const minutesLastN = minutesPerMatch * matchesInPeriod;
+          const dPer90LastN = minutesLastN >= 45 ? (totalDecisiveLastN / minutesLastN) * 90 : 0;
+          const decisiveRatio = Math.min(1, decisivePerMatch);
+          
+          const fallbackForm = {
+            playerId: player.playerId,
+            playerName: player.playerName,
+            playerPhoto: player.playerPhoto,
+            teamId: player.teamId,
+            teamName: player.teamName,
+            teamLogo: player.teamLogo,
+            goals: Math.round(goalsLastN),
+            assists: Math.round(assistsLastN),
+            decisive: Math.round(totalDecisiveLastN),
+            matches: matchesInPeriod,
+            minutes: Math.round(minutesLastN),
+            goalsPer90: minutesLastN >= 45 ? (goalsLastN / minutesLastN) * 90 : 0,
+            assistsPer90: minutesLastN >= 45 ? (assistsLastN / minutesLastN) * 90 : 0,
+            decisivePer90: dPer90LastN,
+            decisiveRatio: decisiveRatio,
             goalStreak: 0,
             decisiveStreak: 0,
-          });
+            period: n,
+            isRealData: false,
+          };
+          
+          playersWithRealForm.push(fallbackForm);
         }
+        
+        topPlayers = playersWithRealForm
+          .sort((a, b) => b.decisivePer90 - a.decisivePer90)
+          .slice(0, 10);
+        
+        const realDataCount = topPlayers.filter(p => p.isRealData).length;
+        isSeasonFallback = realDataCount < 5;
       }
       
-      const topPlayers = Array.from(playerMap.values())
-        .sort((a, b) => b.decisivePer90 - a.decisivePer90)
-        .slice(0, 10);
+      if (topPlayers.length === 0) {
+        isSeasonFallback = true;
+        
+        topPlayers = candidatePlayers.slice(0, 10).map(player => {
+          const { seasonGoals, seasonAssists, seasonMatches, seasonMinutes } = player;
+          return {
+            playerId: player.playerId,
+            playerName: player.playerName,
+            playerPhoto: player.playerPhoto,
+            teamId: player.teamId,
+            teamName: player.teamName,
+            teamLogo: player.teamLogo,
+            goals: seasonGoals,
+            assists: seasonAssists,
+            decisive: seasonGoals + seasonAssists,
+            matches: seasonMatches,
+            minutes: seasonMinutes,
+            goalsPer90: seasonMinutes > 0 ? (seasonGoals / seasonMinutes) * 90 : 0,
+            assistsPer90: seasonMinutes > 0 ? (seasonAssists / seasonMinutes) * 90 : 0,
+            decisivePer90: seasonMinutes > 0 ? ((seasonGoals + seasonAssists) / seasonMinutes) * 90 : 0,
+            decisiveRatio: seasonMatches > 0 ? Math.min(1, (seasonGoals + seasonAssists) / seasonMatches) : 0,
+            goalStreak: 0,
+            decisiveStreak: 0,
+            period: n,
+          };
+        }).sort((a, b) => b.decisivePer90 - a.decisivePer90);
+      }
 
       const response = {
         players: topPlayers,
-        isSeasonFallback: true,
+        isSeasonFallback,
+        period: n,
       };
 
       cache.set(cacheKey, response, 1800);
