@@ -1,10 +1,11 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Calendar as CalendarIcon, Clock, ChevronDown, ChevronUp, Target, Users, Flame } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, ChevronDown, ChevronUp, Target, Users, Flame, AlertCircle } from "lucide-react";
 import { format, addDays, subDays } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
@@ -25,7 +26,7 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { useAppStore } from "@/stores/appStore";
 import { t } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
-import type { MatchWithPlayers, Fixture, PlayerProbability } from "@shared/schema";
+import type { MatchWithPlayers, PlayerProbability } from "@shared/schema";
 
 function MatchCard({ match }: { match: MatchWithPlayers }) {
   const { language } = useAppStore();
@@ -275,10 +276,33 @@ export default function TodayMatches() {
     selectedSeason,
     selectedDate,
     setSelectedDate,
+    setLeagueSeason,
   } = useAppStore();
 
+  const { data: leagueInfo } = useQuery<any[]>({
+    queryKey: ['/api/football/leagues', selectedCompetitionId],
+    staleTime: 60 * 60 * 1000,
+  });
+
+  useEffect(() => {
+    if (leagueInfo && leagueInfo.length > 0) {
+      const league = leagueInfo[0];
+      if (league.currentSeason) {
+        setLeagueSeason(selectedCompetitionId, league.currentSeason);
+      }
+    }
+  }, [leagueInfo, selectedCompetitionId, setLeagueSeason]);
+
+  const effectiveSeason = useMemo(() => {
+    if (leagueInfo && leagueInfo.length > 0 && leagueInfo[0].currentSeason) {
+      return leagueInfo[0].currentSeason;
+    }
+    return selectedSeason;
+  }, [leagueInfo, selectedSeason]);
+
   const { data: matches, isLoading, error, refetch } = useQuery<MatchWithPlayers[]>({
-    queryKey: ['/api/football/fixtures/date', selectedDate, selectedCompetitionId, selectedSeason],
+    queryKey: ['/api/football/fixtures/date', selectedDate, selectedCompetitionId, effectiveSeason],
+    enabled: !!effectiveSeason,
   });
 
   const dateLabel = useMemo(() => {
@@ -291,6 +315,8 @@ export default function TodayMatches() {
     if (selectedDate === tomorrow) return t(language, 'common.tomorrow');
     return format(new Date(selectedDate), 'PPP');
   }, [selectedDate, language]);
+
+  const isDev = import.meta.env.DEV;
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
@@ -314,6 +340,12 @@ export default function TodayMatches() {
           </PopoverContent>
         </Popover>
       </div>
+
+      {isDev && (
+        <div className="text-xs font-mono bg-muted/50 p-2 rounded-md text-muted-foreground">
+          Debug: leagueId = {selectedCompetitionId}, season = {effectiveSeason}, date = {selectedDate}
+        </div>
+      )}
 
       <div className="flex gap-2">
         <Button 
@@ -339,7 +371,18 @@ export default function TodayMatches() {
         </Button>
       </div>
 
-      {error && <ErrorState onRetry={refetch} />}
+      {error && (
+        <div className="space-y-4">
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error Loading Fixtures</AlertTitle>
+            <AlertDescription>
+              {error instanceof Error ? error.message : 'Failed to load fixtures'}
+            </AlertDescription>
+          </Alert>
+          <ErrorState onRetry={refetch} />
+        </div>
+      )}
 
       {isLoading && (
         <div className="grid gap-4 md:grid-cols-2">

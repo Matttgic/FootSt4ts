@@ -10,6 +10,13 @@ interface ApiUsageData {
   lastReset: string;
 }
 
+interface ApiResponse<T> {
+  data?: T;
+  error?: string;
+  status?: number;
+  details?: any;
+}
+
 const getToday = () => new Date().toISOString().split('T')[0];
 
 const getApiUsage = (): ApiUsageData => {
@@ -41,17 +48,21 @@ const getCacheTTL = (endpoint: string): number => {
   if (endpoint.includes('fixtures')) {
     return CACHE_TTL_CONFIG.FIXTURES;
   }
+  if (endpoint.includes('leagues')) {
+    return CACHE_TTL_CONFIG.DEFAULT;
+  }
   if (endpoint.includes('players')) {
     return CACHE_TTL_CONFIG.PLAYER_STATS;
   }
   return CACHE_TTL_CONFIG.DEFAULT;
 };
 
-const fetchFromApiFootball = async (endpoint: string, params: Record<string, string> = {}): Promise<any> => {
+const fetchFromApiFootball = async (endpoint: string, params: Record<string, string> = {}): Promise<ApiResponse<any>> => {
   const apiKey = process.env.API_FOOTBALL_KEY;
   
   if (!apiKey) {
-    throw new Error('API_FOOTBALL_KEY is not configured');
+    console.error('[API] API_FOOTBALL_KEY is not configured');
+    return { error: 'API_FOOTBALL_KEY is not configured', status: 500 };
   }
 
   const queryString = new URLSearchParams(params).toString();
@@ -60,32 +71,57 @@ const fetchFromApiFootball = async (endpoint: string, params: Record<string, str
 
   const cachedData = cache.get(cacheKey);
   if (cachedData) {
-    return cachedData;
+    console.log(`[API] Cache hit for: ${endpoint}`);
+    return { data: cachedData };
   }
 
   const usage = getApiUsage();
   if (usage.callsToday >= API_LIMITS.DAILY_LIMIT) {
-    throw new Error('API daily limit reached');
+    console.error('[API] Daily limit reached');
+    return { error: 'API daily limit reached', status: 429 };
   }
 
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: {
-      'x-apisports-key': apiKey,
-    },
-  });
+  try {
+    console.log(`[API] Fetching: ${url}`);
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'x-apisports-key': apiKey,
+      },
+    });
 
-  if (!response.ok) {
-    throw new Error(`API request failed: ${response.status}`);
+    const data = await response.json();
+    
+    if (!response.ok) {
+      console.error(`[API] HTTP Error ${response.status}:`, data);
+      return { 
+        error: `API request failed with status ${response.status}`, 
+        status: response.status,
+        details: data
+      };
+    }
+
+    if (data.errors && Object.keys(data.errors).length > 0) {
+      console.error('[API] API returned errors:', data.errors);
+      return { 
+        error: 'API returned errors', 
+        status: 400,
+        details: data.errors
+      };
+    }
+
+    incrementApiUsage();
+    console.log(`[API] Success: ${endpoint}, results: ${data.results || 0}`);
+
+    const ttl = getCacheTTL(endpoint);
+    cache.set(cacheKey, data, ttl);
+
+    return { data };
+  } catch (error: any) {
+    console.error(`[API] Fetch error for ${endpoint}:`, error.message);
+    return { error: error.message, status: 500 };
   }
-
-  const data = await response.json();
-  incrementApiUsage();
-
-  const ttl = getCacheTTL(endpoint);
-  cache.set(cacheKey, data, ttl);
-
-  return data;
 };
 
 const mergeTopScorersAndAssisters = (scorers: any[], assisters: any[]): any[] => {
@@ -151,6 +187,7 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  
   app.get('/api/football/usage', (_req: Request, res: Response) => {
     const usage = getApiUsage();
     const percentage = usage.callsToday / API_LIMITS.DAILY_LIMIT;
@@ -171,42 +208,136 @@ export async function registerRoutes(
     });
   });
 
+  app.get('/api/football/leagues', async (req: Request, res: Response) => {
+    try {
+      const leagueId = req.query.id as string;
+      
+      const params: Record<string, string> = {};
+      if (leagueId) {
+        params.id = leagueId;
+      }
+      
+      const result = await fetchFromApiFootball('leagues', params);
+      
+      if (result.error) {
+        console.error('[/api/football/leagues] Error:', result.error, result.details);
+        return res.status(result.status || 500).json({ 
+          error: result.error, 
+          details: result.details 
+        });
+      }
+      
+      const leagues = result.data?.response || [];
+      
+      const processed = leagues.map((item: any) => ({
+        id: item.league.id,
+        name: item.league.name,
+        country: item.country.name,
+        logo: item.league.logo,
+        seasons: item.seasons.map((s: any) => ({
+          year: s.year,
+          start: s.start,
+          end: s.end,
+          current: s.current,
+        })),
+        currentSeason: item.seasons.find((s: any) => s.current)?.year || 
+                       item.seasons[item.seasons.length - 1]?.year,
+      }));
+      
+      res.json(processed);
+    } catch (error: any) {
+      console.error('[/api/football/leagues] Exception:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.get('/api/football/stats/merged', async (req: Request, res: Response) => {
     try {
-      const league = req.query.league as string || '39';
-      const season = req.query.season as string || '2024';
+      const league = req.query.league as string;
+      const season = req.query.season as string;
 
-      const [scorersData, assistersData] = await Promise.all([
+      if (!league || !season) {
+        return res.status(400).json({ 
+          error: 'Missing required parameters: league and season',
+          receivedParams: { league, season }
+        });
+      }
+
+      console.log(`[/api/football/stats/merged] Fetching for league=${league}, season=${season}`);
+
+      const [scorersResult, assistersResult] = await Promise.all([
         fetchFromApiFootball('players/topscorers', { league, season }),
         fetchFromApiFootball('players/topassists', { league, season }),
       ]);
 
-      const merged = mergeTopScorersAndAssisters(
-        scorersData.response || [],
-        assistersData.response || []
-      );
+      if (scorersResult.error && assistersResult.error) {
+        console.error('[/api/football/stats/merged] Both requests failed');
+        return res.status(scorersResult.status || 500).json({ 
+          error: `Failed to fetch data: ${scorersResult.error}`,
+          scorersError: scorersResult.error,
+          assistersError: assistersResult.error,
+          details: scorersResult.details || assistersResult.details
+        });
+      }
 
-      res.json(merged);
+      const scorers = scorersResult.data?.response || [];
+      const assisters = assistersResult.data?.response || [];
+
+      console.log(`[/api/football/stats/merged] Found ${scorers.length} scorers, ${assisters.length} assisters`);
+
+      if (scorers.length === 0 && assisters.length === 0) {
+        return res.json({ 
+          data: [],
+          meta: {
+            league,
+            season,
+            scorersCount: 0,
+            assistersCount: 0,
+            message: 'No data available for this league/season combination'
+          }
+        });
+      }
+
+      const merged = mergeTopScorersAndAssisters(scorers, assisters);
+
+      res.json({ 
+        data: merged,
+        meta: {
+          league,
+          season,
+          scorersCount: scorers.length,
+          assistersCount: assisters.length
+        }
+      });
     } catch (error: any) {
-      console.error('Error fetching merged stats:', error);
+      console.error('[/api/football/stats/merged] Exception:', error);
       res.status(500).json({ error: error.message });
     }
   });
 
   app.get('/api/football/players/search', async (req: Request, res: Response) => {
     try {
-      const league = req.query.league as string || '39';
-      const season = req.query.season as string || '2024';
+      const league = req.query.league as string;
+      const season = req.query.season as string;
       const search = req.query.search as string;
 
       if (!search || search.length < 3) {
         return res.json([]);
       }
 
-      const data = await fetchFromApiFootball('players', { league, season, search });
-      res.json(data.response || []);
+      if (!league || !season) {
+        return res.status(400).json({ error: 'Missing required parameters: league and season' });
+      }
+
+      const result = await fetchFromApiFootball('players', { league, season, search });
+      
+      if (result.error) {
+        return res.status(result.status || 500).json({ error: result.error, details: result.details });
+      }
+      
+      res.json(result.data?.response || []);
     } catch (error: any) {
-      console.error('Error searching players:', error);
+      console.error('[/api/football/players/search] Exception:', error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -215,27 +346,40 @@ export async function registerRoutes(
     try {
       const playerId = req.params.playerId;
       const period = parseInt(req.query.period as string) || 5;
+      const season = req.query.season as string;
 
-      const playerData = await fetchFromApiFootball('players', { id: playerId, season: '2024' });
+      if (!season) {
+        return res.status(400).json({ error: 'Missing required parameter: season' });
+      }
+
+      const playerResult = await fetchFromApiFootball('players', { id: playerId, season });
       
-      if (!playerData.response || playerData.response.length === 0) {
+      if (playerResult.error) {
+        return res.status(playerResult.status || 500).json({ error: playerResult.error, details: playerResult.details });
+      }
+      
+      if (!playerResult.data?.response || playerResult.data.response.length === 0) {
         return res.status(404).json({ error: 'Player not found' });
       }
 
-      const player = playerData.response[0];
+      const player = playerResult.data.response[0];
       const teamId = player.statistics[0]?.team?.id;
       
       if (!teamId) {
         return res.status(404).json({ error: 'Team not found for player' });
       }
 
-      const fixturesData = await fetchFromApiFootball('fixtures', {
+      const fixturesResult = await fetchFromApiFootball('fixtures', {
         team: teamId.toString(),
-        season: '2024',
+        season,
         last: period.toString(),
       });
 
-      const fixtures = fixturesData.response || [];
+      if (fixturesResult.error) {
+        return res.status(fixturesResult.status || 500).json({ error: fixturesResult.error, details: fixturesResult.details });
+      }
+
+      const fixtures = fixturesResult.data?.response || [];
       const lastNMatches: any[] = [];
       let totalGoals = 0;
       let totalAssists = 0;
@@ -246,11 +390,13 @@ export async function registerRoutes(
 
       for (const fix of fixtures) {
         try {
-          const fixturePlayersData = await fetchFromApiFootball('fixtures/players', {
+          const fixturePlayersResult = await fetchFromApiFootball('fixtures/players', {
             fixture: fix.fixture.id.toString(),
           });
 
-          const fixtureTeams = fixturePlayersData.response || [];
+          if (fixturePlayersResult.error) continue;
+
+          const fixtureTeams = fixturePlayersResult.data?.response || [];
           let playerInFixture = null;
           
           for (const team of fixtureTeams) {
@@ -305,7 +451,7 @@ export async function registerRoutes(
             }
           }
         } catch (e) {
-          console.error('Error fetching fixture players:', e);
+          console.error('[/api/football/players/form] Error fetching fixture players:', e);
         }
       }
 
@@ -345,7 +491,7 @@ export async function registerRoutes(
         currentStreak,
       });
     } catch (error: any) {
-      console.error('Error fetching player form:', error);
+      console.error('[/api/football/players/form] Exception:', error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -353,16 +499,24 @@ export async function registerRoutes(
   app.get('/api/football/players/stats/:playerId', async (req: Request, res: Response) => {
     try {
       const playerId = req.params.playerId;
-      const league = req.query.league as string || '39';
-      const season = req.query.season as string || '2024';
+      const league = req.query.league as string;
+      const season = req.query.season as string;
 
-      const data = await fetchFromApiFootball('players', { id: playerId, league, season });
+      if (!league || !season) {
+        return res.status(400).json({ error: 'Missing required parameters: league and season' });
+      }
+
+      const result = await fetchFromApiFootball('players', { id: playerId, league, season });
       
-      if (!data.response || data.response.length === 0) {
+      if (result.error) {
+        return res.status(result.status || 500).json({ error: result.error, details: result.details });
+      }
+      
+      if (!result.data?.response || result.data.response.length === 0) {
         return res.status(404).json({ error: 'Player not found' });
       }
 
-      const player = data.response[0];
+      const player = result.data.response[0];
       const stats = player.statistics[0] || {};
       const minutes = stats.games?.minutes || 1;
 
@@ -381,7 +535,7 @@ export async function registerRoutes(
         assistsPer90: ((stats.goals?.assists || 0) / minutes) * 90,
       });
     } catch (error: any) {
-      console.error('Error fetching player stats:', error);
+      console.error('[/api/football/players/stats] Exception:', error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -389,8 +543,12 @@ export async function registerRoutes(
   app.get('/api/football/fixtures/date', async (req: Request, res: Response) => {
     try {
       const date = req.query.date as string || new Date().toISOString().split('T')[0];
-      const league = req.query.league as string || '39';
-      const season = req.query.season as string || '2024';
+      const league = req.query.league as string;
+      const season = req.query.season as string;
+
+      if (!league || !season) {
+        return res.status(400).json({ error: 'Missing required parameters: league and season' });
+      }
 
       const usage = getApiUsage();
       const percentage = usage.callsToday / API_LIMITS.DAILY_LIMIT;
@@ -399,16 +557,23 @@ export async function registerRoutes(
         return res.status(429).json({ error: 'API limit reached', warningLevel: 'critical' });
       }
 
-      const fixturesData = await fetchFromApiFootball('fixtures', { date, league, season });
-      const fixtures = fixturesData.response || [];
+      console.log(`[/api/football/fixtures/date] Fetching for date=${date}, league=${league}, season=${season}`);
 
-      const [scorersData, assistersData] = await Promise.all([
+      const fixturesResult = await fetchFromApiFootball('fixtures', { date, league, season });
+      
+      if (fixturesResult.error) {
+        return res.status(fixturesResult.status || 500).json({ error: fixturesResult.error, details: fixturesResult.details });
+      }
+      
+      const fixtures = fixturesResult.data?.response || [];
+
+      const [scorersResult, assistersResult] = await Promise.all([
         fetchFromApiFootball('players/topscorers', { league, season }),
         fetchFromApiFootball('players/topassists', { league, season }),
       ]);
 
-      const topScorers = scorersData.response?.slice(0, 20) || [];
-      const topAssisters = assistersData.response?.slice(0, 20) || [];
+      const topScorers = scorersResult.data?.response?.slice(0, 20) || [];
+      const topAssisters = assistersResult.data?.response?.slice(0, 20) || [];
 
       const matchesWithPlayers = fixtures.map((fixture: any) => {
         const homeTeamId = fixture.teams.home.id;
@@ -476,7 +641,7 @@ export async function registerRoutes(
 
       res.json(matchesWithPlayers);
     } catch (error: any) {
-      console.error('Error fetching fixtures:', error);
+      console.error('[/api/football/fixtures/date] Exception:', error);
       res.status(500).json({ error: error.message });
     }
   });

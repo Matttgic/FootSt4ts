@@ -34,12 +34,16 @@ export const getQueryFn: <T>(options: {
     let url = basePath;
     
     if (params.length > 0) {
-      if (basePath.includes('/form/') || basePath.includes('/stats/')) {
-        url = basePath;
+      if (basePath.includes('/form/')) {
         const queryParams = new URLSearchParams();
         if (params[0]) queryParams.set('period', String(params[0]));
-        if (params[1]) queryParams.set('league', String(params[1]));
-        if (params[2]) queryParams.set('season', String(params[2]));
+        if (params[1]) queryParams.set('season', String(params[1]));
+        const qs = queryParams.toString();
+        if (qs) url += `?${qs}`;
+      } else if (basePath.includes('/stats/') && basePath.includes('/players/')) {
+        const queryParams = new URLSearchParams();
+        if (params[0]) queryParams.set('league', String(params[0]));
+        if (params[1]) queryParams.set('season', String(params[1]));
         const qs = queryParams.toString();
         if (qs) url += `?${qs}`;
       } else if (basePath === '/api/football/stats/merged') {
@@ -58,6 +62,10 @@ export const getQueryFn: <T>(options: {
         if (params[0]) queryParams.set('date', String(params[0]));
         if (params[1]) queryParams.set('league', String(params[1]));
         if (params[2]) queryParams.set('season', String(params[2]));
+        url = `${basePath}?${queryParams.toString()}`;
+      } else if (basePath === '/api/football/leagues') {
+        const queryParams = new URLSearchParams();
+        if (params[0]) queryParams.set('id', String(params[0]));
         url = `${basePath}?${queryParams.toString()}`;
       }
     }

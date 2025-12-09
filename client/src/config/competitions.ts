@@ -1,5 +1,8 @@
 import type { Competition } from "@shared/schema";
 
+export const TIER_1_LEAGUE_IDS = [39, 140, 135, 78, 61, 2, 3];
+export const TIER_2_LEAGUE_IDS = [94, 88, 144, 203, 197, 179, 253, 71, 128];
+
 export const TIER_1_COMPETITIONS: Competition[] = [
   { id: 39, name: "Premier League", country: "England", logo: "https://media.api-sports.io/football/leagues/39.png", tier: 1, defaultSeason: 2024 },
   { id: 140, name: "La Liga", country: "Spain", logo: "https://media.api-sports.io/football/leagues/140.png", tier: 1, defaultSeason: 2024 },
@@ -31,4 +34,15 @@ export const getCompetitionById = (id: number): Competition | undefined => {
 export const getAvailableSeasons = (): number[] => {
   const currentYear = new Date().getFullYear();
   return [currentYear, currentYear - 1, currentYear - 2, currentYear - 3];
+};
+
+export const formatSeasonDisplay = (year: number): string => {
+  return `${year}/${(year + 1).toString().slice(-2)}`;
+};
+
+export const getCurrentSeasonYear = (): number => {
+  const now = new Date();
+  const month = now.getMonth();
+  const year = now.getFullYear();
+  return month >= 7 ? year : year - 1;
 };

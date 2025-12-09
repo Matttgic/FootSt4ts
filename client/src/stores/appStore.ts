@@ -1,7 +1,16 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Language, Theme, Favorite, ApiUsage } from '@shared/schema';
-import { TIER_1_COMPETITIONS } from '@/config/competitions';
+import { TIER_1_COMPETITIONS, getCurrentSeasonYear } from '@/config/competitions';
+
+interface LeagueInfo {
+  id: number;
+  name: string;
+  country: string;
+  logo: string;
+  currentSeason: number;
+  seasons: { year: number; start: string; end: string; current: boolean }[];
+}
 
 interface AppState {
   language: Language;
@@ -16,6 +25,7 @@ interface AppState {
   showFavoritesOnly: boolean;
   highlightFavorites: boolean;
   apiUsage: ApiUsage;
+  leagueSeasons: Record<number, number>;
   
   setLanguage: (lang: Language) => void;
   setTheme: (theme: Theme) => void;
@@ -32,6 +42,8 @@ interface AppState {
   setShowFavoritesOnly: (show: boolean) => void;
   setHighlightFavorites: (highlight: boolean) => void;
   updateApiUsage: (usage: Partial<ApiUsage>) => void;
+  setLeagueSeason: (leagueId: number, season: number) => void;
+  getLeagueSeason: (leagueId: number) => number;
 }
 
 const getToday = () => {
@@ -45,7 +57,7 @@ export const useAppStore = create<AppState>()(
       language: 'en',
       theme: 'dark',
       selectedCompetitionId: TIER_1_COMPETITIONS[0]?.id ?? 39,
-      selectedSeason: new Date().getFullYear(),
+      selectedSeason: getCurrentSeasonYear(),
       selectedDate: getToday(),
       formPeriod: 5,
       showTier2: false,
@@ -60,6 +72,7 @@ export const useAppStore = create<AppState>()(
         warningLevel: 'normal',
         lastReset: getToday(),
       },
+      leagueSeasons: {},
 
       setLanguage: (language) => set({ language }),
       setTheme: (theme) => {
@@ -74,7 +87,14 @@ export const useAppStore = create<AppState>()(
         const newTheme = get().theme === 'dark' ? 'light' : 'dark';
         get().setTheme(newTheme);
       },
-      setSelectedCompetition: (selectedCompetitionId) => set({ selectedCompetitionId }),
+      setSelectedCompetition: (selectedCompetitionId) => {
+        const leagueSeason = get().leagueSeasons[selectedCompetitionId];
+        if (leagueSeason) {
+          set({ selectedCompetitionId, selectedSeason: leagueSeason });
+        } else {
+          set({ selectedCompetitionId, selectedSeason: getCurrentSeasonYear() });
+        }
+      },
       setSelectedSeason: (selectedSeason) => set({ selectedSeason }),
       setSelectedDate: (selectedDate) => set({ selectedDate }),
       setFormPeriod: (formPeriod) => set({ formPeriod }),
@@ -94,6 +114,12 @@ export const useAppStore = create<AppState>()(
       updateApiUsage: (usage) => set((state) => ({
         apiUsage: { ...state.apiUsage, ...usage },
       })),
+      setLeagueSeason: (leagueId, season) => set((state) => ({
+        leagueSeasons: { ...state.leagueSeasons, [leagueId]: season },
+      })),
+      getLeagueSeason: (leagueId) => {
+        return get().leagueSeasons[leagueId] || getCurrentSeasonYear();
+      },
     }),
     {
       name: 'football-stats-storage',
@@ -107,6 +133,7 @@ export const useAppStore = create<AppState>()(
         favorites: state.favorites,
         showFavoritesOnly: state.showFavoritesOnly,
         highlightFavorites: state.highlightFavorites,
+        leagueSeasons: state.leagueSeasons,
       }),
     }
   )

@@ -1,8 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { ArrowUpDown, ArrowUp, ArrowDown, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Table,
   TableBody,
@@ -27,6 +28,19 @@ import type { MergedPlayerStats } from "@shared/schema";
 type SortField = 'goals' | 'assists' | 'matches' | 'minutes' | 'goalsPer90' | 'assistsPer90';
 type SortDirection = 'asc' | 'desc';
 
+interface MergedStatsResponse {
+  data: MergedPlayerStats[];
+  meta?: {
+    league: string;
+    season: string;
+    scorersCount: number;
+    assistersCount: number;
+    message?: string;
+  };
+  error?: string;
+  details?: any;
+}
+
 export default function GlobalStats() {
   const { 
     language, 
@@ -35,6 +49,7 @@ export default function GlobalStats() {
     showFavoritesOnly,
     highlightFavorites,
     isFavorite,
+    setLeagueSeason,
   } = useAppStore();
   
   const [sortField, setSortField] = useState<SortField>('goals');
@@ -50,9 +65,42 @@ export default function GlobalStats() {
     { id: 'assistsPer90', label: t(language, 'common.assistsPer90'), visible: true },
   ]);
 
-  const { data, isLoading, error, refetch } = useQuery<MergedPlayerStats[]>({
-    queryKey: ['/api/football/stats/merged', selectedCompetitionId, selectedSeason],
+  const { data: leagueInfo } = useQuery<any[]>({
+    queryKey: ['/api/football/leagues', selectedCompetitionId],
+    staleTime: 60 * 60 * 1000,
   });
+
+  useEffect(() => {
+    if (leagueInfo && leagueInfo.length > 0) {
+      const league = leagueInfo[0];
+      if (league.currentSeason) {
+        setLeagueSeason(selectedCompetitionId, league.currentSeason);
+      }
+    }
+  }, [leagueInfo, selectedCompetitionId, setLeagueSeason]);
+
+  const effectiveSeason = useMemo(() => {
+    if (leagueInfo && leagueInfo.length > 0 && leagueInfo[0].currentSeason) {
+      return leagueInfo[0].currentSeason;
+    }
+    return selectedSeason;
+  }, [leagueInfo, selectedSeason]);
+
+  const { data: response, isLoading, error, refetch } = useQuery<MergedStatsResponse>({
+    queryKey: ['/api/football/stats/merged', selectedCompetitionId, effectiveSeason],
+    enabled: !!effectiveSeason,
+  });
+
+  const players = useMemo(() => {
+    if (!response) return [];
+    if (Array.isArray(response)) return response as MergedPlayerStats[];
+    return response.data || [];
+  }, [response]);
+
+  const meta = useMemo(() => {
+    if (!response || Array.isArray(response)) return null;
+    return response.meta;
+  }, [response]);
 
   const toggleColumn = (columnId: string) => {
     setColumns(prev => prev.map(col => 
@@ -70,9 +118,9 @@ export default function GlobalStats() {
   };
 
   const sortedData = useMemo(() => {
-    if (!data) return [];
+    if (!players || players.length === 0) return [];
     
-    let filtered = [...data];
+    let filtered = [...players];
     
     if (showFavoritesOnly) {
       filtered = filtered.filter(player => isFavorite('player', player.playerId));
@@ -84,7 +132,7 @@ export default function GlobalStats() {
       const multiplier = sortDirection === 'asc' ? 1 : -1;
       return (aValue - bValue) * multiplier;
     });
-  }, [data, sortField, sortDirection, showFavoritesOnly, isFavorite]);
+  }, [players, sortField, sortDirection, showFavoritesOnly, isFavorite]);
 
   const SortIcon = ({ field }: { field: SortField }) => {
     if (sortField !== field) {
@@ -97,9 +145,23 @@ export default function GlobalStats() {
 
   const isColumnVisible = (id: string) => columns.find(c => c.id === id)?.visible ?? true;
 
+  const isDev = import.meta.env.DEV;
+
   if (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return (
-      <div className="max-w-7xl mx-auto px-4 py-6">
+      <div className="max-w-7xl mx-auto px-4 py-6 space-y-4">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>API Error</AlertTitle>
+          <AlertDescription>
+            {errorMessage}
+            {errorMessage.includes('400') && ' - Check that league and season parameters are valid.'}
+            {errorMessage.includes('401') && ' - Check your API key configuration.'}
+            {errorMessage.includes('403') && ' - Access denied. Check API subscription.'}
+            {errorMessage.includes('429') && ' - Rate limit exceeded. Try again later.'}
+          </AlertDescription>
+        </Alert>
         <ErrorState onRetry={refetch} />
       </div>
     );
@@ -115,6 +177,29 @@ export default function GlobalStats() {
         </div>
       </div>
 
+      {isDev && (
+        <div className="text-xs font-mono bg-muted/50 p-2 rounded-md text-muted-foreground" data-testid="debug-info">
+          Debug: leagueId = {selectedCompetitionId}, season = {effectiveSeason}, 
+          scorersCount = {meta?.scorersCount ?? 'N/A'}, assistersCount = {meta?.assistersCount ?? 'N/A'}
+          {leagueInfo && leagueInfo[0] && ` | API currentSeason = ${leagueInfo[0].currentSeason}`}
+        </div>
+      )}
+
+      {response && 'error' in response && response.error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Data Error</AlertTitle>
+          <AlertDescription>
+            {response.error}
+            {response.details && (
+              <pre className="mt-2 text-xs overflow-auto max-h-20">
+                {JSON.stringify(response.details, null, 2)}
+              </pre>
+            )}
+          </AlertDescription>
+        </Alert>
+      )}
+
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-lg">{t(language, 'stats.merged')}</CardTitle>
@@ -126,7 +211,9 @@ export default function GlobalStats() {
             </div>
           ) : sortedData.length === 0 ? (
             <div className="p-4">
-              <EmptyState />
+              <EmptyState 
+                message={meta?.message || t(language, 'common.noData')}
+              />
             </div>
           ) : (
             <div className="overflow-x-auto">

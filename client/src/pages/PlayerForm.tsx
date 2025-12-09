@@ -1,11 +1,12 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, TrendingUp, Target, Users, Clock, Flame } from "lucide-react";
+import { Search, TrendingUp, Target, Users, Clock, Flame, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Table,
   TableBody,
@@ -54,25 +55,47 @@ export default function PlayerForm() {
     selectedSeason,
     formPeriod,
     setFormPeriod,
+    setLeagueSeason,
   } = useAppStore();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
   const debouncedSearch = useDebounce(searchQuery, 300);
 
-  const { data: searchResults, isLoading: isSearching } = useQuery<any[]>({
-    queryKey: ['/api/football/players/search', selectedCompetitionId, selectedSeason, debouncedSearch],
-    enabled: debouncedSearch.length >= 3,
+  const { data: leagueInfo } = useQuery<any[]>({
+    queryKey: ['/api/football/leagues', selectedCompetitionId],
+    staleTime: 60 * 60 * 1000,
+  });
+
+  useEffect(() => {
+    if (leagueInfo && leagueInfo.length > 0) {
+      const league = leagueInfo[0];
+      if (league.currentSeason) {
+        setLeagueSeason(selectedCompetitionId, league.currentSeason);
+      }
+    }
+  }, [leagueInfo, selectedCompetitionId, setLeagueSeason]);
+
+  const effectiveSeason = useMemo(() => {
+    if (leagueInfo && leagueInfo.length > 0 && leagueInfo[0].currentSeason) {
+      return leagueInfo[0].currentSeason;
+    }
+    return selectedSeason;
+  }, [leagueInfo, selectedSeason]);
+
+  const { data: searchResults, isLoading: isSearching, error: searchError } = useQuery<any[]>({
+    queryKey: ['/api/football/players/search', selectedCompetitionId, effectiveSeason, debouncedSearch],
+    enabled: debouncedSearch.length >= 3 && !!effectiveSeason,
   });
 
   const { data: playerForm, isLoading: isLoadingForm, error: formError, refetch: refetchForm } = useQuery<PlayerFormData>({
-    queryKey: ['/api/football/players/form', selectedPlayerId, formPeriod],
-    enabled: !!selectedPlayerId,
+    queryKey: [`/api/football/players/form/${selectedPlayerId}`, formPeriod, effectiveSeason],
+    enabled: !!selectedPlayerId && !!effectiveSeason,
   });
 
   const { data: playerStats } = useQuery<MergedPlayerStats>({
-    queryKey: ['/api/football/players/stats', selectedPlayerId, selectedCompetitionId, selectedSeason],
-    enabled: !!selectedPlayerId,
+    queryKey: [`/api/football/players/stats/${selectedPlayerId}`, selectedCompetitionId, effectiveSeason],
+    enabled: !!selectedPlayerId && !!effectiveSeason,
   });
 
   const probability = useMemo(() => {
@@ -120,6 +143,8 @@ export default function PlayerForm() {
     }
   };
 
+  const isDev = import.meta.env.DEV;
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -131,6 +156,12 @@ export default function PlayerForm() {
           </TabsList>
         </Tabs>
       </div>
+
+      {isDev && (
+        <div className="text-xs font-mono bg-muted/50 p-2 rounded-md text-muted-foreground">
+          Debug: leagueId = {selectedCompetitionId}, season = {effectiveSeason}
+        </div>
+      )}
 
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -157,6 +188,8 @@ export default function PlayerForm() {
                     </div>
                   ))}
                 </div>
+              ) : searchError ? (
+                <p className="text-center text-destructive py-4">Error loading results</p>
               ) : searchResults && searchResults.length > 0 ? (
                 <div className="space-y-1">
                   {searchResults.map((result: any) => (
@@ -197,7 +230,16 @@ export default function PlayerForm() {
       )}
 
       {selectedPlayerId && formError && (
-        <ErrorState onRetry={refetchForm} />
+        <div className="space-y-4">
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error Loading Player Form</AlertTitle>
+            <AlertDescription>
+              {formError instanceof Error ? formError.message : 'Failed to load player data'}
+            </AlertDescription>
+          </Alert>
+          <ErrorState onRetry={refetchForm} />
+        </div>
       )}
 
       {selectedPlayerId && isLoadingForm && (
