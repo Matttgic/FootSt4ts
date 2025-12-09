@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, TrendingUp, Target, Users, Clock, Flame, AlertCircle, ArrowUpDown, ArrowUp, ArrowDown, Trophy } from "lucide-react";
+import { Search, TrendingUp, Target, Users, Clock, Flame, AlertCircle, ArrowUpDown, ArrowUp, ArrowDown, Trophy, Info } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -108,11 +108,14 @@ export default function PlayerForm() {
   const [topFormSortField, setTopFormSortField] = useState<TopFormSortField>('decisivePer90');
   const [topFormSortDir, setTopFormSortDir] = useState<'asc' | 'desc'>('desc');
 
-  const { data: topFormPlayers, isLoading: isLoadingTopForm } = useQuery<TopFormPlayer[]>({
+  const { data: topFormData, isLoading: isLoadingTopForm } = useQuery<{ players: TopFormPlayer[]; isSeasonFallback: boolean }>({
     queryKey: ['/api/football/players/top-form', selectedCompetitionId, effectiveSeason],
     enabled: !!effectiveSeason,
     staleTime: 30 * 60 * 1000,
   });
+
+  const topFormPlayers = topFormData?.players;
+  const isSeasonFallback = topFormData?.isSeasonFallback;
 
   const sortedTopFormPlayers = useMemo(() => {
     if (!topFormPlayers) return [];
@@ -291,6 +294,12 @@ export default function PlayerForm() {
               {t(language, 'form.top10Title')}
             </CardTitle>
             <p className="text-sm text-muted-foreground">{t(language, 'form.top10Desc')}</p>
+            {isSeasonFallback && !isLoadingTopForm && sortedTopFormPlayers.length > 0 && (
+              <p className="text-xs text-amber-500 dark:text-amber-400 mt-2 flex items-center gap-1">
+                <Info className="w-3 h-3" />
+                {t(language, 'form.seasonStatsFallback')}
+              </p>
+            )}
           </CardHeader>
           <CardContent>
             {isLoadingTopForm ? (
@@ -417,7 +426,7 @@ export default function PlayerForm() {
               </div>
             ) : (
               <EmptyState 
-                message={t(language, 'common.noData')}
+                message={t(language, 'form.noFormData')}
                 icon={<Trophy className="w-12 h-12 text-muted-foreground" />}
               />
             )}

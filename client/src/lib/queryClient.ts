@@ -67,6 +67,11 @@ export const getQueryFn: <T>(options: {
         const queryParams = new URLSearchParams();
         if (params[0]) queryParams.set('id', String(params[0]));
         url = `${basePath}?${queryParams.toString()}`;
+      } else if (basePath === '/api/football/players/top-form') {
+        const queryParams = new URLSearchParams();
+        if (params[0]) queryParams.set('league', String(params[0]));
+        if (params[1]) queryParams.set('season', String(params[1]));
+        url = `${basePath}?${queryParams.toString()}`;
       }
     }
     

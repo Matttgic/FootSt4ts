@@ -656,7 +656,7 @@ export async function registerRoutes(
       }
 
       const cacheKey = `top-form-${league}-${season}`;
-      const cachedData = cache.get(cacheKey);
+      const cachedData = cache.get(cacheKey) as { players: any[]; isSeasonFallback: boolean } | undefined;
       if (cachedData) {
         console.log('[/api/football/players/top-form] Cache hit');
         return res.json(cachedData);
@@ -742,9 +742,14 @@ export async function registerRoutes(
         .sort((a, b) => b.decisivePer90 - a.decisivePer90)
         .slice(0, 10);
 
-      cache.set(cacheKey, topPlayers, 1800);
+      const response = {
+        players: topPlayers,
+        isSeasonFallback: true,
+      };
 
-      res.json(topPlayers);
+      cache.set(cacheKey, response, 1800);
+
+      res.json(response);
     } catch (error: any) {
       console.error('[/api/football/players/top-form] Exception:', error);
       res.status(500).json({ error: error.message });
@@ -753,11 +758,44 @@ export async function registerRoutes(
 
   app.post('/api/contact', async (req: Request, res: Response) => {
     try {
+      const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
+      const rateLimitKey = `contact-ratelimit-${clientIp}`;
+      const currentCount = cache.get<number>(rateLimitKey) || 0;
+      
+      if (currentCount >= 5) {
+        console.log(`[/api/contact] Rate limit exceeded for IP: ${clientIp}`);
+        return res.status(429).json({ error: 'Too many requests. Please try again later.' });
+      }
+      
+      cache.set(rateLimitKey, currentCount + 1, 3600);
+      
       const { name, email, message } = req.body;
+      
+      const sanitizeInput = (input: string | undefined): string => {
+        if (!input) return '';
+        return input
+          .replace(/[\r\n]/g, ' ')
+          .replace(/<[^>]*>/g, '')
+          .trim()
+          .slice(0, 500);
+      };
+      
+      const sanitizedName = sanitizeInput(name);
+      const sanitizedEmail = sanitizeInput(email);
       
       if (!message || !message.trim()) {
         return res.status(400).json({ error: 'Message is required' });
       }
+      
+      if (message.length > 5000) {
+        return res.status(400).json({ error: 'Message too long (max 5000 characters)' });
+      }
+      
+      const sanitizedMessage = message
+        .replace(/<script[^>]*>.*?<\/script>/gi, '')
+        .replace(/<[^>]*>/g, '')
+        .trim()
+        .slice(0, 5000);
       
       const formspreeEndpoint = process.env.FORMSPREE_ENDPOINT;
       
@@ -769,10 +807,10 @@ export async function registerRoutes(
             'Accept': 'application/json'
           },
           body: JSON.stringify({
-            name: name || 'Anonymous',
-            email: email || 'No email provided',
-            message,
-            _subject: `[FootStats] Message from ${name || 'Anonymous'}`
+            name: sanitizedName || 'Anonymous',
+            email: sanitizedEmail || 'No email provided',
+            message: sanitizedMessage,
+            _subject: `[FootStats] Message from ${sanitizedName || 'Anonymous'}`
           })
         });
         
@@ -782,14 +820,14 @@ export async function registerRoutes(
         }
         
         console.log('[Contact Form] Sent to Formspree:', {
-          name: name || 'Anonymous',
+          name: sanitizedName || 'Anonymous',
           timestamp: new Date().toISOString(),
         });
       } else {
         console.log('[Contact Form] No Formspree endpoint configured. Message logged:', {
-          name: name || 'Anonymous',
-          email: email || 'No email',
-          message: message.substring(0, 100) + (message.length > 100 ? '...' : ''),
+          name: sanitizedName || 'Anonymous',
+          email: sanitizedEmail || 'No email',
+          message: sanitizedMessage.substring(0, 100) + (sanitizedMessage.length > 100 ? '...' : ''),
           timestamp: new Date().toISOString(),
         });
       }

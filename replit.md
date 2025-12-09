@@ -56,6 +56,7 @@ GET /api/football/players/search?league={id}&season={year}&search={query} - Play
 GET /api/football/players/form/:id?period={5|10}&season={year} - Player form data
 GET /api/football/players/stats/:id?league={id}&season={year} - Player season stats
 GET /api/football/fixtures/date?date={YYYY-MM-DD}&league={id}&season={year} - Fixtures by date
+GET /api/football/players/top-form?league={id}&season={year} - Top 10 form players (season stats)
 POST /api/contact - Submit contact/feedback form
 ```
 
@@ -101,7 +102,15 @@ The app follows the design_guidelines.md file for:
 ## Recent Changes (December 2025)
 
 ### Latest
-- Added Donate page with BuyMeACoffee integration
+- Updated Donate page with Ko-fi (https://ko-fi.com/footst4ts) and PayPal (https://paypal.me/M0012) buttons
+- Contact form now sends to backend proxy (/api/contact) - email not exposed on frontend
+- Fixed Top 10 Form Players bug: queryClient now properly passes league/season parameters
+- Added `isSeasonFallback` indicator to show when using season aggregate stats
+- Added i18n messages for form data fallback states (EN/FR)
+- Top 10 Form uses season stats (decisivePer90) for API efficiency (2 calls vs ~62 for recent match data)
+
+### Previous
+- Added Donate page with donation links
 - Added Contact page with feedback form and backend endpoint
 - Added Footer component with legal disclaimer about betting
 - Fixed Badge component to use React.forwardRef for proper ref handling

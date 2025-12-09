@@ -106,6 +106,8 @@ export const translations = {
       matchesWithGoal: "matches with goal",
       decisiveMatchesLabel: "decisive matches",
       rateLimitWarning: "Please wait 60 seconds before searching again.",
+      noFormData: "No form data available for this league and season.",
+      seasonStatsFallback: "Recent form based on season stats (not enough recent match coverage).",
     },
     matches: {
       title: "Today's Matches",
@@ -254,6 +256,8 @@ export const translations = {
       matchesWithGoal: "matchs avec but",
       decisiveMatchesLabel: "matchs décisifs",
       rateLimitWarning: "Veuillez réessayer dans 60 secondes.",
+      noFormData: "Aucune donnée de forme disponible pour cette ligue et cette saison.",
+      seasonStatsFallback: "Forme récente basée sur les statistiques de la saison (couverture de matchs récents insuffisante).",
     },
     matches: {
       title: "Matchs du jour",
