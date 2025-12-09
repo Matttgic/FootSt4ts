@@ -751,7 +751,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post('/api/contact', (req: Request, res: Response) => {
+  app.post('/api/contact', async (req: Request, res: Response) => {
     try {
       const { name, email, message } = req.body;
       
@@ -759,12 +759,40 @@ export async function registerRoutes(
         return res.status(400).json({ error: 'Message is required' });
       }
       
-      console.log('[Contact Form]', {
-        name: name || 'Anonymous',
-        email: email || 'No email',
-        message: message.substring(0, 100) + (message.length > 100 ? '...' : ''),
-        timestamp: new Date().toISOString(),
-      });
+      const formspreeEndpoint = process.env.FORMSPREE_ENDPOINT;
+      
+      if (formspreeEndpoint) {
+        const formspreeResponse = await fetch(formspreeEndpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({
+            name: name || 'Anonymous',
+            email: email || 'No email provided',
+            message,
+            _subject: `[FootStats] Message from ${name || 'Anonymous'}`
+          })
+        });
+        
+        if (!formspreeResponse.ok) {
+          console.error('[/api/contact] Formspree error:', formspreeResponse.status);
+          return res.status(500).json({ error: 'Failed to send message' });
+        }
+        
+        console.log('[Contact Form] Sent to Formspree:', {
+          name: name || 'Anonymous',
+          timestamp: new Date().toISOString(),
+        });
+      } else {
+        console.log('[Contact Form] No Formspree endpoint configured. Message logged:', {
+          name: name || 'Anonymous',
+          email: email || 'No email',
+          message: message.substring(0, 100) + (message.length > 100 ? '...' : ''),
+          timestamp: new Date().toISOString(),
+        });
+      }
       
       res.json({ success: true, message: 'Message received' });
     } catch (error: any) {

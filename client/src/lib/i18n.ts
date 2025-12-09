@@ -137,8 +137,7 @@ export const translations = {
     },
     donate: {
       title: "Support FootStats",
-      description: "FootStats is a free and independent football statistics tool. Your support helps us maintain servers and continue development.",
-      coffeeButton: "Buy me a coffee",
+      description: "FootStats is a free and independent project.\nIf you enjoy the tool and want to support its development, you can help via Ko-fi or PayPal.\nEvery contribution helps maintain servers and improve features.",
       thanks: "Thank you for your support!",
     },
     contact: {
@@ -286,8 +285,7 @@ export const translations = {
     },
     donate: {
       title: "Soutenir FootStats",
-      description: "FootStats est un outil de statistiques football gratuit et indépendant. Votre soutien nous aide à maintenir les serveurs et continuer le développement.",
-      coffeeButton: "Offrir un café",
+      description: "FootStats est un projet gratuit et indépendant.\nSi tu aimes l'outil et que tu souhaites soutenir son développement, tu peux m'aider via Ko-fi ou PayPal.\nChaque soutien aide à maintenir les serveurs et améliorer les fonctionnalités.",
       thanks: "Merci pour votre soutien!",
     },
     contact: {

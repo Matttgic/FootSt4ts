@@ -70,6 +70,15 @@ The app automatically detects the current season for each league:
 ## Environment Variables
 
 - `API_FOOTBALL_KEY` - Required. API-Football API key (stored in Secrets)
+- `FORMSPREE_ENDPOINT` - Optional. Formspree endpoint for contact form (e.g., https://formspree.io/f/YOUR_FORM_ID)
+
+### Setting up Contact Form Email Delivery
+
+To receive contact form messages at your email:
+1. Go to [formspree.io](https://formspree.io) and create a free account
+2. Create a new form with your email address
+3. Copy the form endpoint (looks like `https://formspree.io/f/abcd1234`)
+4. Add it as a secret: `FORMSPREE_ENDPOINT=https://formspree.io/f/YOUR_FORM_ID`
 
 ## Running the App
 

@@ -9,6 +9,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useAppStore } from "@/stores/appStore";
 import { t } from "@/lib/i18n";
 
+
 export default function Contact() {
   const { language } = useAppStore();
   const [name, setName] = useState("");
@@ -16,6 +17,7 @@ export default function Contact() {
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,12 +25,19 @@ export default function Contact() {
     if (!message.trim()) return;
     
     setIsSubmitting(true);
+    setError(null);
     
     try {
       const response = await fetch('/api/contact', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, message }),
+        headers: { 
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+          name: name || 'Anonymous',
+          email: email || 'No email provided',
+          message
+        }),
       });
       
       if (response.ok) {
@@ -36,9 +45,12 @@ export default function Contact() {
         setName("");
         setEmail("");
         setMessage("");
+      } else {
+        setError(language === 'fr' ? 'Erreur lors de l\'envoi. Réessayez.' : 'Failed to send. Please try again.');
       }
-    } catch (error) {
-      console.error('Failed to submit contact form:', error);
+    } catch (err) {
+      console.error('Failed to submit contact form:', err);
+      setError(language === 'fr' ? 'Erreur de connexion. Réessayez.' : 'Connection error. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -63,6 +75,14 @@ export default function Contact() {
         </Alert>
       )}
 
+      {error && (
+        <Alert className="bg-red-500/10 border-red-500/20">
+          <AlertDescription className="text-red-600 dark:text-red-400">
+            {error}
+          </AlertDescription>
+        </Alert>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -79,6 +99,7 @@ export default function Contact() {
               </Label>
               <Input
                 id="name"
+                name="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="John Doe"
@@ -93,6 +114,7 @@ export default function Contact() {
               </Label>
               <Input
                 id="email"
+                name="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -105,6 +127,7 @@ export default function Contact() {
               <Label htmlFor="message">{t(language, 'common.message')} *</Label>
               <Textarea
                 id="message"
+                name="message"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder={language === 'fr' ? "Votre message..." : "Your message..."}
