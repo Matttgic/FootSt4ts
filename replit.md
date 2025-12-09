@@ -48,12 +48,21 @@ All routes go through secure proxy:
 
 ```
 GET /api/football/usage - API usage stats
-GET /api/football/stats/merged - Combined scorers/assisters
-GET /api/football/players/search - Player search
-GET /api/football/players/form/:id - Player form data
-GET /api/football/players/stats/:id - Player season stats
-GET /api/football/fixtures/date - Fixtures by date
+GET /api/football/leagues?id={leagueId} - Get league info with current season
+GET /api/football/stats/merged?league={id}&season={year} - Combined scorers/assisters
+GET /api/football/players/search?league={id}&season={year}&search={query} - Player search
+GET /api/football/players/form/:id?period={5|10}&season={year} - Player form data
+GET /api/football/players/stats/:id?league={id}&season={year} - Player season stats
+GET /api/football/fixtures/date?date={YYYY-MM-DD}&league={id}&season={year} - Fixtures by date
 ```
+
+## Dynamic Season Detection
+
+The app automatically detects the current season for each league:
+1. Frontend fetches `/api/football/leagues?id={leagueId}` 
+2. API returns league info including `currentSeason` (detected via `current: true` flag)
+3. All subsequent API calls use this detected season
+4. No hardcoded seasons in code - all dynamically determined
 
 ## Environment Variables
 
@@ -79,6 +88,11 @@ The app follows the design_guidelines.md file for:
 
 ## Recent Changes
 
+- Fixed data fetching issues - all pages now show real player statistics
+- Implemented dynamic season detection via `/api/football/leagues` endpoint
+- Added debug info display in dev mode (leagueId, season, scorersCount, assistersCount)
+- Enhanced error handling with visible error alerts showing API status codes
+- Updated all pages (GlobalStats, PlayerForm, TodayMatches) to use dynamic season from API
 - Initial implementation of all three pages
 - Secure API proxy with caching and rate limiting
 - Probability calculation system
