@@ -24,7 +24,7 @@ Les recommandations automatiques sont **désactivées** : incertitude pas encore
 
 1. Ouvrir le lien du Site ; utiliser le calendrier ou « Prochaine date avec matchs ». Les données ouvertes fonctionnent sans compte fournisseur.
 2. Pour les horaires certifiés, créer un compte gratuit sur https://www.football-data.org/client/register. Pour les cotes, choisir uniquement l'offre gratuite sur https://the-odds-api.com/.
-3. Dans le panneau de gestion du Site, configurer les secrets serveur `FOOTBALL_DATA_KEY`, `ODDS_API_KEY`, et un `COLLECT_TOKEN` aléatoire. Si votre interface ne propose pas la saisie sécurisée de secrets, cette étape reste à faire via le tableau de bord de l'hébergeur ; ne jamais envoyer les clés dans le chat, une URL ou un fichier GitHub.
+3. Dans FootSt4ts, ouvrir ⚙️ Sources & configuration → Mes clés API, coller chaque clé et appuyer sur Enregistrer. Utiliser ensuite Collecter les cotes et joueurs. Ne jamais envoyer les clés dans le chat ou sur GitHub.
 4. API-Football est facultatif : utiliser le compte direct, pas une offre RapidAPI pouvant facturer des dépassements. Vérifier la saison autorisée et les droits avant `API_FOOTBALL_RIGHTS_CONFIRMED=true`.
 5. Programmer `scripts/collect.mjs` avec `SITE_ORIGIN` et `COLLECT_TOKEN` dans un ordonnanceur autorisé. **Le Site livré est privé : un ordonnanceur externe nécessite également une voie d'accès autorisée au Site. Aucun contournement de cette protection n'est installé.** La planification n'est donc pas activée dans cette livraison. Les lectures de calendrier se rafraîchissent à la consultation, dans les limites du cache partagé.
 
@@ -58,3 +58,6 @@ Tables D1 : cache, budgets, verrous, entités typées, observations immuables, c
 Voir [audit et budgets](docs/SOURCES.md) et [limitations](docs/LIMITATIONS.md).
 
 Estimations statistiques, aucun gain garanti. 18+.
+
+## Saisie mobile des clés
+Ouvrir le site → ⚙️ Sources & configuration → Mes clés API. Coller puis enregistrer chaque clé. Le serveur chiffre les clés en AES-GCM dans D1 ; la clé maîtresse est un secret de production séparé. Accès limité au propriétaire autorisé. Les clés ne sont jamais renvoyées au navigateur. Le bouton Collecter déclenche les connecteurs cotes/joueurs sous leurs budgets et caches existants (15 minutes minimum entre demandes). Aucun accès payant ajouté. Une clé enregistrée ne garantit pas la couverture fournisseur. Les associations de matchs restent nécessaires pour afficher les cotes.
