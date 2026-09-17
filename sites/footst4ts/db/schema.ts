@@ -1,0 +1,8 @@
+import { sqliteTable,text,integer,index,uniqueIndex } from 'drizzle-orm/sqlite-core';
+export const cache=sqliteTable('cache',{key:text('key').primaryKey(),payload:text('payload').notNull(),collectedAt:text('collected_at').notNull(),expiresAt:integer('expires_at').notNull(),error:text('error')});
+export const budget=sqliteTable('budget',{key:text('key').primaryKey(),used:integer('used').notNull().default(0),limit:integer('limit').notNull()});
+export const locks=sqliteTable('locks',{key:text('key').primaryKey(),until:integer('until').notNull()});
+export const entities=sqliteTable('entities',{id:text('id').primaryKey(),kind:text('kind').notNull(),provider:text('provider').notNull(),providerId:text('provider_id').notNull(),payload:text('payload').notNull()},t=>[uniqueIndex('entity_provider').on(t.kind,t.provider,t.providerId)]);
+export const observations=sqliteTable('observations',{id:integer('id').primaryKey({autoIncrement:true}),entityId:text('entity_id').notNull(),kind:text('kind').notNull(),source:text('source').notNull(),collectedAt:text('collected_at').notNull(),reference:text('reference').notNull(),payload:text('payload').notNull()},t=>[index('observations_entity_time').on(t.entityId,t.collectedAt)]);
+export const mappings=sqliteTable('mappings',{key:text('key').primaryKey(),internalId:text('internal_id').notNull(),evidence:text('evidence').notNull()});
+export const predictions=sqliteTable('predictions',{id:text('id').primaryKey(),matchId:text('match_id').notNull(),publishedAt:text('published_at').notNull(),kickoff:text('kickoff').notNull(),version:text('version').notNull(),payload:text('payload').notNull(),result:text('result')},t=>[index('predictions_match').on(t.matchId)]);

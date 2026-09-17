@@ -1,0 +1,326 @@
+{
+  "generatedAt": "2026-09-17T14:33:00.086Z",
+  "version": "poisson-v1",
+  "results": [
+    {
+      "league": "en.1",
+      "n": 76,
+      "brier": 0.6200208004637284,
+      "logloss": 1.0344796275969903,
+      "naiveBrier": 0.6666666666666661,
+      "bins": [
+        {
+          "n": 0,
+          "p": null,
+          "observed": null
+        },
+        {
+          "n": 7,
+          "p": 0.15950868806493812,
+          "observed": 0.2857142857142857
+        },
+        {
+          "n": 108,
+          "p": 0.25376141602991636,
+          "observed": 0.25925925925925924
+        },
+        {
+          "n": 54,
+          "p": 0.3508180553215669,
+          "observed": 0.2777777777777778
+        },
+        {
+          "n": 42,
+          "p": 0.447393616195304,
+          "observed": 0.47619047619047616
+        },
+        {
+          "n": 12,
+          "p": 0.5446390013676486,
+          "observed": 0.6666666666666666
+        },
+        {
+          "n": 4,
+          "p": 0.6224130009369908,
+          "observed": 0.5
+        },
+        {
+          "n": 1,
+          "p": 0.7171793645873406,
+          "observed": 1
+        },
+        {
+          "n": 0,
+          "p": null,
+          "observed": null
+        },
+        {
+          "n": 0,
+          "p": null,
+          "observed": null
+        }
+      ],
+      "roi": null,
+      "drawdown": null,
+      "bets": 0,
+      "marketComparison": null,
+      "method": "60 % initial, 20 % validation réservée, 20 % test glissant. Paramètres fixes ; résultats rétrospectifs, versions historiques des sources non disponibles."
+    },
+    {
+      "league": "fr.1",
+      "n": 61,
+      "brier": 0.6569522767267392,
+      "logloss": 1.0804042562690142,
+      "naiveBrier": 0.6666666666666665,
+      "bins": [
+        {
+          "n": 0,
+          "p": null,
+          "observed": null
+        },
+        {
+          "n": 11,
+          "p": 0.16980024941467167,
+          "observed": 0
+        },
+        {
+          "n": 86,
+          "p": 0.24902844016268125,
+          "observed": 0.3372093023255814
+        },
+        {
+          "n": 31,
+          "p": 0.34194356379126706,
+          "observed": 0.2903225806451613
+        },
+        {
+          "n": 35,
+          "p": 0.4476576593001218,
+          "observed": 0.4
+        },
+        {
+          "n": 15,
+          "p": 0.5445805671323981,
+          "observed": 0.3333333333333333
+        },
+        {
+          "n": 5,
+          "p": 0.6557548684857022,
+          "observed": 0.8
+        },
+        {
+          "n": 0,
+          "p": null,
+          "observed": null
+        },
+        {
+          "n": 0,
+          "p": null,
+          "observed": null
+        },
+        {
+          "n": 0,
+          "p": null,
+          "observed": null
+        }
+      ],
+      "roi": null,
+      "drawdown": null,
+      "bets": 0,
+      "marketComparison": null,
+      "method": "60 % initial, 20 % validation réservée, 20 % test glissant. Paramètres fixes ; résultats rétrospectifs, versions historiques des sources non disponibles."
+    },
+    {
+      "league": "es.1",
+      "n": 76,
+      "brier": 0.5995232210034558,
+      "logloss": 1.0055869619727298,
+      "naiveBrier": 0.6666666666666661,
+      "bins": [
+        {
+          "n": 0,
+          "p": null,
+          "observed": null
+        },
+        {
+          "n": 16,
+          "p": 0.17451693245168434,
+          "observed": 0.0625
+        },
+        {
+          "n": 111,
+          "p": 0.2537975827175105,
+          "observed": 0.25225225225225223
+        },
+        {
+          "n": 35,
+          "p": 0.34210566922705066,
+          "observed": 0.3142857142857143
+        },
+        {
+          "n": 38,
+          "p": 0.4527556767934166,
+          "observed": 0.4473684210526316
+        },
+        {
+          "n": 20,
+          "p": 0.5354623363085798,
+          "observed": 0.6
+        },
+        {
+          "n": 8,
+          "p": 0.6435670664826478,
+          "observed": 0.875
+        },
+        {
+          "n": 0,
+          "p": null,
+          "observed": null
+        },
+        {
+          "n": 0,
+          "p": null,
+          "observed": null
+        },
+        {
+          "n": 0,
+          "p": null,
+          "observed": null
+        }
+      ],
+      "roi": null,
+      "drawdown": null,
+      "bets": 0,
+      "marketComparison": null,
+      "method": "60 % initial, 20 % validation réservée, 20 % test glissant. Paramètres fixes ; résultats rétrospectifs, versions historiques des sources non disponibles."
+    },
+    {
+      "league": "it.1",
+      "n": 76,
+      "brier": 0.6196253266251571,
+      "logloss": 1.0313995956241717,
+      "naiveBrier": 0.6666666666666661,
+      "bins": [
+        {
+          "n": 0,
+          "p": null,
+          "observed": null
+        },
+        {
+          "n": 13,
+          "p": 0.1605342719251902,
+          "observed": 0.23076923076923078
+        },
+        {
+          "n": 104,
+          "p": 0.2607053333658179,
+          "observed": 0.25
+        },
+        {
+          "n": 53,
+          "p": 0.3441672894282583,
+          "observed": 0.32075471698113206
+        },
+        {
+          "n": 38,
+          "p": 0.4469427116823783,
+          "observed": 0.39473684210526316
+        },
+        {
+          "n": 14,
+          "p": 0.5404159043723961,
+          "observed": 0.8571428571428571
+        },
+        {
+          "n": 5,
+          "p": 0.6552368215872593,
+          "observed": 0.6
+        },
+        {
+          "n": 1,
+          "p": 0.733003642149551,
+          "observed": 0
+        },
+        {
+          "n": 0,
+          "p": null,
+          "observed": null
+        },
+        {
+          "n": 0,
+          "p": null,
+          "observed": null
+        }
+      ],
+      "roi": null,
+      "drawdown": null,
+      "bets": 0,
+      "marketComparison": null,
+      "method": "60 % initial, 20 % validation réservée, 20 % test glissant. Paramètres fixes ; résultats rétrospectifs, versions historiques des sources non disponibles."
+    },
+    {
+      "league": "de.1",
+      "n": 62,
+      "brier": 0.6238332650069062,
+      "logloss": 1.0388861643857528,
+      "naiveBrier": 0.6666666666666665,
+      "bins": [
+        {
+          "n": 1,
+          "p": 0.09963857550469057,
+          "observed": 0
+        },
+        {
+          "n": 17,
+          "p": 0.17806835032991578,
+          "observed": 0.17647058823529413
+        },
+        {
+          "n": 77,
+          "p": 0.23650159017082437,
+          "observed": 0.2727272727272727
+        },
+        {
+          "n": 37,
+          "p": 0.35961134526156735,
+          "observed": 0.2702702702702703
+        },
+        {
+          "n": 27,
+          "p": 0.4341523114547959,
+          "observed": 0.48148148148148145
+        },
+        {
+          "n": 18,
+          "p": 0.5446961054790666,
+          "observed": 0.5
+        },
+        {
+          "n": 8,
+          "p": 0.6330369812357285,
+          "observed": 0.75
+        },
+        {
+          "n": 1,
+          "p": 0.7660190932667608,
+          "observed": 0
+        },
+        {
+          "n": 0,
+          "p": null,
+          "observed": null
+        },
+        {
+          "n": 0,
+          "p": null,
+          "observed": null
+        }
+      ],
+      "roi": null,
+      "drawdown": null,
+      "bets": 0,
+      "marketComparison": null,
+      "method": "60 % initial, 20 % validation réservée, 20 % test glissant. Paramètres fixes ; résultats rétrospectifs, versions historiques des sources non disponibles."
+    }
+  ]
+}
