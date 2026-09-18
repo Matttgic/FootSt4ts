@@ -67,3 +67,8 @@ Le panneau de configuration affiche les collectes et erreurs par championnat. Le
 
 ## Mise à jour rapidité et analyses
 Voir `docs/RECHERCHE-ET-CORRECTIONS.md` : cache navigateur et réponses D1, revalidation en arrière-plan, analyses Poisson v2 glissantes sur 365 jours, explications des tests et essai de source alternative pour les buteurs. Les vérifications API sont séparées et la liste se met à jour après collecte. Aucun scraping commercial sans autorisation.
+
+## Interface joueurs et pistes expérimentales
+Les joueurs sont présentés par pages de 10, en lignes compactes (nom, équipe, buts, passes). Une fiche latérale conserve les autres statistiques et leur source. Les sources détaillées sont repliées.
+L’onglet Sélections commence par 3 pistes statistiques maximum, une par match. Priorité aux marchés présentant une cote de moins de 2 heures et un avantage brut ≥ 5 % (seuil expérimental) ; sinon, analyse seule du marché simple à plus forte probabilité. Ce ne sont pas des recommandations validées : aucune estimation fiable de l’incertitude n’est encore disponible. Sans cote fraîche, aucune value bet n’est annoncée.
+Le propriétaire peut demander des cotes récentes dans les paramètres : maximum 10 crédits supplémentaires par demande, 1 demande toutes les 6 heures, sous le plafond global 400 crédits/mois et la réserve fournisseur. Des demandes fréquentes réduisent les collectes restantes du mois ; aucune facturation ou hausse de quota automatique.
