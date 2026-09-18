@@ -61,3 +61,6 @@ Estimations statistiques, aucun gain garanti. 18+.
 
 ## Saisie mobile des clés
 Ouvrir le site → ⚙️ Sources & configuration → Mes clés API. Coller puis enregistrer chaque clé. Le serveur chiffre les clés en AES-GCM dans D1 ; la clé maîtresse est un secret de production séparé. Accès limité au propriétaire autorisé. Les clés ne sont jamais renvoyées au navigateur. Le bouton Collecter déclenche les connecteurs cotes/joueurs sous leurs budgets et caches existants (15 minutes minimum entre demandes). Aucun accès payant ajouté. Une clé enregistrée ne garantit pas la couverture fournisseur. Les associations de matchs restent nécessaires pour afficher les cotes.
+
+## Diagnostic des connexions
+Le panneau de configuration affiche les collectes et erreurs par championnat. Les erreurs API-Football sont classées sans exposer le contenu brut. La saison joueurs peut être choisie explicitement ; aucun basculement silencieux vers des données historiques. Les événements The Odds API sont associés uniquement avec une correspondance unique du championnat, heure UTC exacte et deux équipes ordonnées (noms ou noms courts officiels football-data.org). La preuve et les identifiants sont conservés. Les événements ambigus restent exclus. Les sélections restent désactivées faute de validation de leur incertitude, même avec des clés valides.

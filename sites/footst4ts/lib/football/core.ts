@@ -5,7 +5,7 @@ export const LEAGUES = [
  {id:'it.1',name:'Serie A',country:'Italie',fd:'SA',api:135,odds:'soccer_italy_serie_a'},
  {id:'de.1',name:'Bundesliga',country:'Allemagne',fd:'BL1',api:78,odds:'soccer_germany_bundesliga'},
 ];
-export type Match = {id:string;league:string;season:string;date:string;utc:string|null;home:string;away:string;homeId:string;awayId:string;hg:number|null;ag:number|null;status:string;source:string;collectedAt:string;round:string|null};
+export type Match = {id:string;league:string;season:string;date:string;utc:string|null;home:string;away:string;homeId:string;awayId:string;homeAliases?:string[];awayAliases?:string[];hg:number|null;ag:number|null;status:string;source:string;collectedAt:string;round:string|null};
 export type Quote = {matchId:string;market:string;outcome:string;price:number;bookmaker:string;updatedAt:string;collectedAt:string;source:string;point?:number};
 export function parisDate(instant:Date|string = new Date()){ return new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Paris',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(instant)); }
 export function validDate(s:string){return /^\d{4}-\d{2}-\d{2}$/.test(s)&&!isNaN(Date.parse(s))&&new Date(s).toISOString().slice(0,10)===s}
