@@ -1,9 +1,19 @@
 {
-  "generatedAt": "2026-09-17T14:33:00.086Z",
+  "generatedAt": "2026-09-18T10:39:21.158Z",
   "version": "poisson-v1",
   "results": [
     {
       "league": "en.1",
+      "testCandidates": 76,
+      "skipped": 0,
+      "testStart": "2026-03-21",
+      "testEnd": "2026-05-24",
+      "frequencyBrier": 0.6470057659868703,
+      "naiveLogloss": 1.0986122886681096,
+      "brierInterval": [
+        0.5662912119197319,
+        0.6642839875596566
+      ],
       "n": 76,
       "brier": 0.6200208004637284,
       "logloss": 1.0344796275969903,
@@ -68,6 +78,16 @@
     },
     {
       "league": "fr.1",
+      "testCandidates": 61,
+      "skipped": 0,
+      "testStart": "2026-04-04",
+      "testEnd": "2026-05-17",
+      "frequencyBrier": 0.6833944519746898,
+      "naiveLogloss": 1.0986122886681096,
+      "brierInterval": [
+        0.5811246283270471,
+        0.7082815658991874
+      ],
       "n": 61,
       "brier": 0.6569522767267392,
       "logloss": 1.0804042562690142,
@@ -132,6 +152,16 @@
     },
     {
       "league": "es.1",
+      "testCandidates": 76,
+      "skipped": 0,
+      "testStart": "2026-04-11",
+      "testEnd": "2026-05-24",
+      "frequencyBrier": 0.6257362495412824,
+      "naiveLogloss": 1.0986122886681096,
+      "brierInterval": [
+        0.5596165969144365,
+        0.6540035819744289
+      ],
       "n": 76,
       "brier": 0.5995232210034558,
       "logloss": 1.0055869619727298,
@@ -196,6 +226,16 @@
     },
     {
       "league": "it.1",
+      "testCandidates": 76,
+      "skipped": 0,
+      "testStart": "2026-04-05",
+      "testEnd": "2026-05-24",
+      "frequencyBrier": 0.6599029950581996,
+      "naiveLogloss": 1.0986122886681096,
+      "brierInterval": [
+        0.5723828204949257,
+        0.6638086078517468
+      ],
       "n": 76,
       "brier": 0.6196253266251571,
       "logloss": 1.0313995956241717,
@@ -260,6 +300,16 @@
     },
     {
       "league": "de.1",
+      "testCandidates": 62,
+      "skipped": 0,
+      "testStart": "2026-04-04",
+      "testEnd": "2026-05-16",
+      "frequencyBrier": 0.6651216610620159,
+      "naiveLogloss": 1.0986122886681096,
+      "brierInterval": [
+        0.5396245044202088,
+        0.7101310967365483
+      ],
       "n": 62,
       "brier": 0.6238332650069062,
       "logloss": 1.0388861643857528,

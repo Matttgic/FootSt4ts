@@ -64,3 +64,6 @@ Ouvrir le site → ⚙️ Sources & configuration → Mes clés API. Coller puis
 
 ## Diagnostic des connexions
 Le panneau de configuration affiche les collectes et erreurs par championnat. Les erreurs API-Football sont classées sans exposer le contenu brut. La saison joueurs peut être choisie explicitement ; aucun basculement silencieux vers des données historiques. Les événements The Odds API sont associés uniquement avec une correspondance unique du championnat, heure UTC exacte et deux équipes ordonnées (noms ou noms courts officiels football-data.org). La preuve et les identifiants sont conservés. Les événements ambigus restent exclus. Les sélections restent désactivées faute de validation de leur incertitude, même avec des clés valides.
+
+## Mise à jour rapidité et analyses
+Voir `docs/RECHERCHE-ET-CORRECTIONS.md` : cache navigateur et réponses D1, revalidation en arrière-plan, analyses Poisson v2 glissantes sur 365 jours, explications des tests et essai de source alternative pour les buteurs. Les vérifications API sont séparées et la liste se met à jour après collecte. Aucun scraping commercial sans autorisation.
