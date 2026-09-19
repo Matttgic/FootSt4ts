@@ -106,3 +106,11 @@ button,a,input { -webkit-tap-highlight-color:transparent; } button {cursor:point
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;scroll-behavior:auto!important}}
 
 @media(max-width:640px){.overview-stats{display:none}main h1{font-size:26px!important}main>.section-label{display:none}}
+
+/* Mobile design direction: midnight surfaces, lime emphasis, clear hierarchy. */
+.panel{background:linear-gradient(145deg,#172130,#111a26);border-color:#304157;box-shadow:0 8px 28px #00000016}
+.metric strong,.metric b{font-variant-numeric:tabular-nums;flex-shrink:0;text-align:right}.metric>span:first-child{min-width:0}
+.match:hover{background:#b8f56806}.odd{border:1px solid #3c4e62;background:#1c2a3b}.odd strong{font-size:17px;font-variant-numeric:tabular-nums}
+.source-registry{margin:28px 0}.source-registry article{border:1px solid #304157;background:#141e2b;padding:18px;border-radius:18px;margin:12px 0}.source-registry h4{margin:12px 0 8px;font-size:18px}.source-registry p{font-size:14px;color:#aebdce;line-height:1.7}.source-registry a{font-size:14px;color:#b8f568;text-decoration:underline;text-underline-offset:3px}
+.league-context{margin-top:24px;padding:18px;background:#101e29;border:1px solid #334757;border-radius:18px}.league-context h3{margin:14px 0}.context-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.context-grid strong{display:block;font-size:24px;color:#b8f568;font-variant-numeric:tabular-nums}.context-grid span{display:block;font-size:14px;color:#aebdce;margin-top:6px}summary{line-height:1.5;min-height:36px}summary::marker{color:#b8f568}
+@media(max-width:640px){.metric{flex-wrap:wrap;gap:6px}.metric strong{margin-left:auto}.panel{border-radius:18px}.wrap{padding-left:16px;padding-right:16px}}

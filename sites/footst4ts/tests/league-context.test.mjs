@@ -1,0 +1,2 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {leagueContext} from '../lib/football/league-context.ts';
+test('context excludes future, unfinished, other seasons and unknown scores',()=>{const t={league:'fr',season:'2026',date:'2026-09-19'},m={...t,date:'2026-09-18',status:'FINISHED',hg:0,ag:0,source:'s'};const c=leagueContext([m,{...m,hg:2,ag:1},{...m,date:t.date},{...m,hg:null},{...m,season:'2025'}],t);assert.equal(c.n,2);assert.equal(c.goals,1.5);assert.equal(c.btts,.5);assert.equal(c.homeWin,.5);assert.equal(leagueContext([],t).goals,null)});
