@@ -1,0 +1,6 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {compactQuotes,summaryHistory,oddsWindow} from '../lib/football/compact.ts';
+test('compact quotes keep distinct lines and prefer fresh price',()=>{const now=Date.now(),q={matchId:'a',market:'totals',outcome:'Over',point:2.5,price:2,updatedAt:new Date(now).toISOString()};const result=compactQuotes([q,{...q,price:5,updatedAt:new Date(now-9000000).toISOString()},{...q,point:1.5}],now);assert.equal(result.length,2);assert.equal(result[0].price,2)});
+test('history response never duplicates archived bookmaker payload',()=>{const [row]=summaryHistory([{id:'a',payload:JSON.stringify({matchLabel:'A B',probabilities:{home:.5},quotes:[{price:3}]})}]);assert.equal(JSON.parse(row.payload).quotes,undefined);assert.equal(JSON.parse(row.payload).matchLabel,'A B')});
+test('collection only near scheduled kickoff, never after or wrong league',()=>{const now=Date.now(),m={league:'fr',status:'TIMED',utc:new Date(now+3600000).toISOString()};assert.equal(oddsWindow([m],'fr',now),true);assert.equal(oddsWindow([m],'en',now),false);assert.equal(oddsWindow([{...m,status:'FINISHED'}],'fr',now),false);assert.equal(oddsWindow([{...m,utc:new Date(now+7200000).toISOString()}],'fr',now),false)});

@@ -77,3 +77,25 @@ Le propriétaire peut demander des cotes récentes dans les paramètres : maximu
 Navigation mobile fixe en bas, lien d’évitement clavier, animation réduite selon les préférences système. Les cartes affichent le marché choisi, le bookmaker de la meilleure cote (parmi les connectés), et signalent les cotes de plus de 2 h. Une cote fraîche est préférée à une cote ancienne plus élevée.
 Les analyses du jour pour les matchs des 24 prochaines heures sont archivées lors du calcul serveur, avant le coup d’envoi uniquement. Unicité match + version : le premier instantané est conservé. Les résultats terminés du calendrier permettent l’évaluation prospective Brier/log loss ; aucune rentabilité de pari n’est fabriquée. Le suivi affiche les 100 dernières analyses au maximum. Cette collecte dépend des consultations, pas d’un planificateur garanti.
 Les réponses de requêtes anciennes ne remplacent plus l’écran après un changement de date. Une requête navigateur expire après 30 secondes en conservant les données précédentes.
+
+## Optimisation septembre 2026
+- Réponse quotidienne : meilleures cotes par match/marché/issue/ligne ; les bookmakers complets restent sur la fiche.
+- Analyses et suivi chargés uniquement sur l’onglet Analyses. Historique transmis sans répétition des cotes ; observations complètes conservées en base.
+- Réduction des lectures de correspondances : lecture groupée des identifiants cotes.
+- Collecte cotes automatique lors des consultations, seulement à moins de 90 minutes d’un match certifié, au maximum une tentative par ligue et date Paris. Collecte manuelle existante conservée, plafonds et réserve inchangés. Pas de planificateur autonome activé : aucune garantie sans visite.
+- Maximum automatique inchangé : 5 ligues × 2 marchés × 1 région × 31 jours = 310 crédits. Maximum global local 400/mois, réserve fournisseur 50. L’échec peut consommer une tentative ; pas de boucle de reprises. Une unique collecte ne garantit pas des cotes fraîches pour chaque match d’une ligue.
+- Stratégie : analyses seules ; pas de rentabilité prétendue. EV brute explicitée, méthodes et archives repliables.
+
+## Laboratoire de décision paper-v1
+Le protocole prospectif simule une unité constante, au maximum une sélection par match et version. Règles fixes : 100 matchs ligue, 10 par équipe dans le contexte, calendrier collecté depuis moins de 12 h, cote observée depuis moins de 2 h, EV brute ≥ 5 %, EV encore positive si p diminue de 5 points. Cette sensibilité n’est pas une incertitude statistique validée. Aucun pari réel ni recommandation rentable.
+Les entrées nouvelles utilisent une clé match+paper-v1, sont enregistrées avant coup d’envoi avec cote/bookmaker/date/règles et ne remplacent jamais les analyses précédentes. Les probabilités et les simulations ont des suivis séparés. Aucun backtest de cotes inventé. Le bilan porte sur 1 000 entrées maximum ; le détail affiche 30 lignes. Annulations/reports restent en attente faute de règlement bookmaker vérifié ; résultats FINISHED du fournisseur uniquement. Drawdown calculé dans l’ordre des coups d’envoi (convention, pas chronologie des encaissements). Pas de planification autonome : enregistrement et règlement lors des visites.
+
+## Comparaison au marché et validité de l’affichage
+Les comparaisons 1N2 et totaux normalisent uniquement des issues exhaustives du même opérateur, source, match, marché et ligne, à moins de 60 secondes d’écart. Aucun mélange des meilleures cotes pour retirer la marge. Marché incomplet ou doublon ambigu : comparaison indisponible. Alerte descriptive dès 15 points d’écart, sans modifier les critères paper-v1 ni prétendre valider cet avantage.
+L’écran réévalue les critères temporels toutes les 30 secondes ; le journal conserve la première sélection enregistrée. Les commissions, notamment celles des bourses de paris, et la fiscalité ne sont pas modélisées : bilan brut. Aucun règlement automatique si l’heure de coup d’envoi fournisseur a changé depuis l’archivage. Les reports demeurent à vérifier.
+
+## Protocoles prospectifs comparés
+- paper-v1 reste inchangé : son historique n’est ni remplacé ni reclassé.
+- paper-v2-prudent est un nouveau protocole prospectif. Il ajoute cote ≤ 5, comparaison au marché disponible, divergence absolue ≤ 15 points et exclusion des noms identifiés comme bourses (Matchbook, Betfair, Smarkets, Betdaq, exchange), faute de frais vérifiés. Seuils expérimentaux choisis avant les résultats futurs, pas preuve de supériorité. Pas de garantie que cette liste identifie tous les opérateurs à frais. Tous les bilans restent bruts.
+- Le journal SQL agrège toute l’archive par version, avec détail paginé 30 entrées. Tests SQLite > 1 000 lignes. Dates de départ différentes : ne pas comparer les profits bruts comme une expérience à échantillon identique.
+- Le règlement traite tous les matchs terminés présents dans la saison chargée, sans limite des 100 plus anciennes attentes. Les changements d’horaire demeurent en attente. Aucun ancien pari réinventé ; la collecte dépend encore des visites.
