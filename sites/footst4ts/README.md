@@ -93,3 +93,9 @@ Les entrées nouvelles utilisent une clé match+paper-v1, sont enregistrées ava
 ## Comparaison au marché et validité de l’affichage
 Les comparaisons 1N2 et totaux normalisent uniquement des issues exhaustives du même opérateur, source, match, marché et ligne, à moins de 60 secondes d’écart. Aucun mélange des meilleures cotes pour retirer la marge. Marché incomplet ou doublon ambigu : comparaison indisponible. Alerte descriptive dès 15 points d’écart, sans modifier les critères paper-v1 ni prétendre valider cet avantage.
 L’écran réévalue les critères temporels toutes les 30 secondes ; le journal conserve la première sélection enregistrée. Les commissions, notamment celles des bourses de paris, et la fiscalité ne sont pas modélisées : bilan brut. Aucun règlement automatique si l’heure de coup d’envoi fournisseur a changé depuis l’archivage. Les reports demeurent à vérifier.
+
+## Protocoles prospectifs comparés
+- paper-v1 reste inchangé : son historique n’est ni remplacé ni reclassé.
+- paper-v2-prudent est un nouveau protocole prospectif. Il ajoute cote ≤ 5, comparaison au marché disponible, divergence absolue ≤ 15 points et exclusion des noms identifiés comme bourses (Matchbook, Betfair, Smarkets, Betdaq, exchange), faute de frais vérifiés. Seuils expérimentaux choisis avant les résultats futurs, pas preuve de supériorité. Pas de garantie que cette liste identifie tous les opérateurs à frais. Tous les bilans restent bruts.
+- Le journal SQL agrège toute l’archive par version, avec détail paginé 30 entrées. Tests SQLite > 1 000 lignes. Dates de départ différentes : ne pas comparer les profits bruts comme une expérience à échantillon identique.
+- Le règlement traite tous les matchs terminés présents dans la saison chargée, sans limite des 100 plus anciennes attentes. Les changements d’horaire demeurent en attente. Aucun ancien pari réinventé ; la collecte dépend encore des visites.

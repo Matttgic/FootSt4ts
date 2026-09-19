@@ -1,0 +1,3 @@
+import {loadJournal} from '@/lib/football/journal';
+import {responseCache} from '@/lib/football/response-cache';
+export async function GET(request:Request){const u=new URL(request.url),strategy=u.searchParams.get('strategy')||'paper-v2-prudent',page=Number(u.searchParams.get('page')||0);if(!['paper-v1','paper-v2-prudent'].includes(strategy)||!Number.isInteger(page)||page<0||page>100000)return Response.json({error:'Page ou protocole invalide'},{status:400});return responseCache(`journal:v1:${strategy}:${page}`,async()=>{try{return Response.json(await loadJournal(strategy,page))}catch{return Response.json({error:'Journal temporairement indisponible'},{status:503})}},300000)}

@@ -24,3 +24,14 @@ export function paperReport(rows:any[]){let profit=0,peak=0,drawdown=0,settled=0
  for(const row of [...rows].sort((a,b)=>a.kickoff.localeCompare(b.kickoff)||a.id.localeCompare(b.id))){try{const p=JSON.parse(row.payload),s=p.selection;if(p.kind!=='paper'||!s||!Number.isFinite(s.price)||s.price<=1||!Number.isFinite(Date.parse(row.published_at))||!Number.isFinite(Date.parse(row.kickoff))||Date.parse(row.published_at)>=Date.parse(row.kickoff))continue;const result=row.result?JSON.parse(row.result):null;const won=result?settle(s.market,result.hg,result.ag):null;let net=null;if(won===null)pending++;else{settled++;if(won)wins++;net=won?s.price-1:-1;profit+=net;peak=Math.max(peak,profit);drawdown=Math.max(drawdown,peak-profit)}entries.push({id:row.id,label:p.matchLabel,publishedAt:row.published_at,kickoff:row.kickoff,selection:s,net});}catch{}}
  return {strategy:STRATEGY,settled,pending,wins,profit,roi:settled?profit/settled:null,drawdown,entries:entries.reverse(),limit:1000};
 }
+
+export const PRUDENT_STRATEGY='paper-v2-prudent';
+export const PRUDENT_RULES={...RULES,maxPrice:5,maxMarketGap:.15,requireMarket:true};
+export function decidePrudent(a:any,now=Date.now()){
+ const base=decide(a,now);const reject=(reason:string)=>({eligible:false,reason,strategy:PRUDENT_STRATEGY,selection:null});
+ if(!base.eligible)return {...base,strategy:PRUDENT_STRATEGY};
+ const markets=(a.markets??[]).filter((r:any)=>r.quote&&r.quote.price<=PRUDENT_RULES.maxPrice&&r.marketReference&&Number.isFinite(r.marketReference.p)&&Math.abs(r.p-r.marketReference.p)<=PRUDENT_RULES.maxMarketGap&&!/matchbook|betfair|smarkets|betdaq|exchange/i.test(r.quote.bookmaker??''));
+ const guarded=decide({...a,markets},now);
+ if(!guarded.eligible)return reject('V2 : pas de candidat après contrôle du marché (écart ≤ 15 points, cote ≤ 5, bourses de paris exclues faute de frais vérifiés)');
+ return {...guarded,strategy:PRUDENT_STRATEGY,reason:'Candidat fictif V2 avec filtres supplémentaires ; rentabilité non démontrée'};
+}
