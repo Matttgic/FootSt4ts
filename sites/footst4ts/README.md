@@ -77,3 +77,11 @@ Le propriétaire peut demander des cotes récentes dans les paramètres : maximu
 Navigation mobile fixe en bas, lien d’évitement clavier, animation réduite selon les préférences système. Les cartes affichent le marché choisi, le bookmaker de la meilleure cote (parmi les connectés), et signalent les cotes de plus de 2 h. Une cote fraîche est préférée à une cote ancienne plus élevée.
 Les analyses du jour pour les matchs des 24 prochaines heures sont archivées lors du calcul serveur, avant le coup d’envoi uniquement. Unicité match + version : le premier instantané est conservé. Les résultats terminés du calendrier permettent l’évaluation prospective Brier/log loss ; aucune rentabilité de pari n’est fabriquée. Le suivi affiche les 100 dernières analyses au maximum. Cette collecte dépend des consultations, pas d’un planificateur garanti.
 Les réponses de requêtes anciennes ne remplacent plus l’écran après un changement de date. Une requête navigateur expire après 30 secondes en conservant les données précédentes.
+
+## Optimisation septembre 2026
+- Réponse quotidienne : meilleures cotes par match/marché/issue/ligne ; les bookmakers complets restent sur la fiche.
+- Analyses et suivi chargés uniquement sur l’onglet Analyses. Historique transmis sans répétition des cotes ; observations complètes conservées en base.
+- Réduction des lectures de correspondances : lecture groupée des identifiants cotes.
+- Collecte cotes automatique lors des consultations, seulement à moins de 90 minutes d’un match certifié, au maximum une tentative par ligue et date Paris. Collecte manuelle existante conservée, plafonds et réserve inchangés. Pas de planificateur autonome activé : aucune garantie sans visite.
+- Maximum automatique inchangé : 5 ligues × 2 marchés × 1 région × 31 jours = 310 crédits. Maximum global local 400/mois, réserve fournisseur 50. L’échec peut consommer une tentative ; pas de boucle de reprises. Une unique collecte ne garantit pas des cotes fraîches pour chaque match d’une ligue.
+- Stratégie : analyses seules ; pas de rentabilité prétendue. EV brute explicitée, méthodes et archives repliables.
