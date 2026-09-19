@@ -1,0 +1,7 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {seal,unseal} from '../lib/football/crypto.ts';
+const master=Buffer.from(crypto.getRandomValues(new Uint8Array(32))).toString('base64');
+test('encrypted keys roundtrip, randomized IV, provider binding and tamper rejection',async()=>{const a=await seal('private-test-key',master,'ODDS_API_KEY');const b=await seal('private-test-key',master,'ODDS_API_KEY');assert.notEqual(a,b);assert.ok(!a.includes('private-test-key'));assert.equal(await unseal(a,master,'ODDS_API_KEY'),'private-test-key');await assert.rejects(unseal(a,master,'OTHER'));const v=JSON.parse(a);v.data=(v.data[0]==='A'?'B':'A')+v.data.slice(1);await assert.rejects(unseal(JSON.stringify(v),master,'ODDS_API_KEY'))});
+import {canManage,validWrite} from '../lib/football/settings-policy.ts';
+test('owner-only and same-origin JSON required',()=>{assert.equal(canManage(null,'owner@example.org'),false);assert.equal(canManage({email:'visitor@example.org'},'owner@example.org'),false);assert.equal(canManage({email:'owner@example.org'},''),false);assert.equal(canManage({email:'OWNER@example.org'},'owner@example.org'),true);assert.equal(validWrite(null,'https://example.org','application/json'),false);assert.equal(validWrite('https://attacker.org','https://example.org','application/json'),false);assert.equal(validWrite('https://example.org','https://example.org','text/plain'),false);assert.equal(validWrite('https://example.org','https://example.org','application/json'),true)});
