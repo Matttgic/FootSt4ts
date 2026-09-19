@@ -14,7 +14,7 @@ export function decide(a:any,now=Date.now()){
  if(!priced.length)return reject('Aucune cote réelle de moins de deux heures pour les marchés étudiés');
  const candidates=priced.map((r:any)=>({...r,ev:r.p*r.quote.price-1,stressP:Math.max(0,r.p-RULES.stressDrop),stressEV:Math.max(0,r.p-RULES.stressDrop)*r.quote.price-1})).filter((r:any)=>r.ev>=RULES.minEV&&r.stressEV>0).sort((a:any,b:any)=>b.stressEV-a.stressEV||a.key.localeCompare(b.key));
  if(!candidates.length)return reject('Avantage insuffisant ou disparaissant avec une probabilité réduite de 5 points');
- const r=candidates[0];return {eligible:true,reason:'Admis au suivi fictif uniquement ; rentabilité non démontrée',strategy:STRATEGY,selection:{market:r.key,p:r.p,price:r.quote.price,ev:r.ev,stressP:r.stressP,stressEV:r.stressEV,breakEven:1/r.quote.price,minimumStressPrice:1/r.stressP,bookmaker:r.quote.bookmaker,source:r.quote.source,updatedAt:r.quote.updatedAt,collectedAt:r.quote.collectedAt,stake:1}};
+ const r=candidates[0];return {eligible:true,reason:'Admis au suivi fictif uniquement ; rentabilité non démontrée',strategy:STRATEGY,selection:{market:r.key,p:r.p,marketReference:r.marketReference??null,price:r.quote.price,ev:r.ev,stressP:r.stressP,stressEV:r.stressEV,breakEven:1/r.quote.price,minimumStressPrice:1/r.stressP,bookmaker:r.quote.bookmaker,source:r.quote.source,updatedAt:r.quote.updatedAt,collectedAt:r.quote.collectedAt,stake:1}};
 }
 export function settle(market:string,h:number,a:number):boolean|null{
  if(!Number.isInteger(h)||!Number.isInteger(a)||h<0||a<0)return null;
