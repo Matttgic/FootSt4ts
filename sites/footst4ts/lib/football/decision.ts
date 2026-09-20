@@ -27,11 +27,20 @@ export function paperReport(rows:any[]){let profit=0,peak=0,drawdown=0,settled=0
 
 export const PRUDENT_STRATEGY='paper-v2-prudent';
 export const PRUDENT_RULES={...RULES,maxPrice:5,maxMarketGap:.15,requireMarket:true};
+export function prudentMarketAllowed(r:any){
+ return !!r.quote&&r.quote.price<=PRUDENT_RULES.maxPrice&&!!r.marketReference&&Number.isFinite(r.marketReference.p)&&Math.abs(r.p-r.marketReference.p)<=PRUDENT_RULES.maxMarketGap&&!/matchbook|betfair|smarkets|betdaq|exchange/i.test(r.quote.bookmaker??'');
+}
 export function decidePrudent(a:any,now=Date.now()){
- const base=decide(a,now);const reject=(reason:string)=>({eligible:false,reason,strategy:PRUDENT_STRATEGY,selection:null});
+ const base=decide(a,now);
  if(!base.eligible)return {...base,strategy:PRUDENT_STRATEGY};
- const markets=(a.markets??[]).filter((r:any)=>r.quote&&r.quote.price<=PRUDENT_RULES.maxPrice&&r.marketReference&&Number.isFinite(r.marketReference.p)&&Math.abs(r.p-r.marketReference.p)<=PRUDENT_RULES.maxMarketGap&&!/matchbook|betfair|smarkets|betdaq|exchange/i.test(r.quote.bookmaker??''));
+ // Compare eligible operators before choosing a price; never discard a whole market just because its highest price is an exchange.
+ const markets=(a.markets??[]).map((r:any)=>r.prudentQuote?{...r,quote:r.prudentQuote,marketReference:r.prudentMarketReference}:r).filter(prudentMarketAllowed);
+ if(!markets.length)return {eligible:false,reason:'Aucun opérateur compatible : cote ≤ 5, marché complet, écart ≤ 15 points et frais vérifiables',strategy:PRUDENT_STRATEGY,selection:null};
  const guarded=decide({...a,markets},now);
- if(!guarded.eligible)return reject('V2 : pas de candidat après contrôle du marché (écart ≤ 15 points, cote ≤ 5, bourses de paris exclues faute de frais vérifiés)');
- return {...guarded,strategy:PRUDENT_STRATEGY,reason:'Candidat fictif V2 avec filtres supplémentaires ; rentabilité non démontrée'};
+ return {...guarded,strategy:PRUDENT_STRATEGY,reason:guarded.eligible?'Candidat fictif V2 avec filtres supplémentaires ; rentabilité non démontrée':guarded.reason};
+}
+export function decisionDiagnostics(analyses:any[],now=Date.now()){
+ const counts=new Map<string,number>();let eligible=0;
+ for(const a of analyses){const d=decidePrudent(a,now);if(d.eligible)eligible++;else counts.set(d.reason,(counts.get(d.reason)??0)+1)}
+ return {total:analyses.length,eligible,blocked:[...counts].map(([reason,count])=>({reason,count})).sort((a,b)=>b.count-a.count)};
 }
