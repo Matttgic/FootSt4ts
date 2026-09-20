@@ -1,0 +1,204 @@
+{
+  "generatedAt": "2026-09-20T00:09:08.998Z",
+  "method": "Température des probabilités 1N2 ; choix par log loss sur validation chronologique 60–80 %, évaluation glissante sur les dates restantes. Aucune journée partagée entre validation et test.",
+  "status": "Exploratoire : cette saison a déjà servi à des évaluations. Ce résultat ne constitue pas un test final indépendant.",
+  "baseline": "Poisson buts, demi-vie 120 jours, prior 8. Une seule saison : ne reproduit pas entièrement le moteur roulant intersaisons en production.",
+  "sources": [
+    {
+      "league": "en.1",
+      "path": "data/2025-26-en.1.json",
+      "sha256": "cc20ec8ec7d3888ccfb3b6b6e7b2a3c88f1e73753c9e4e4f9c88985b1d515348"
+    },
+    {
+      "league": "fr.1",
+      "path": "data/2025-26-fr.1.json",
+      "sha256": "e9889b2cfa25819201802d808b7a19ea4f09cb2619e9da5e0f111ba7be3c0ee1"
+    },
+    {
+      "league": "es.1",
+      "path": "data/2025-26-es.1.json",
+      "sha256": "3e1d30f5759bacf43fa068b2e0da55049b09ae2535dc1ff400f057b96aab2045"
+    },
+    {
+      "league": "it.1",
+      "path": "data/2025-26-it.1.json",
+      "sha256": "dd92e5c20f6a60bcdf2e846e6371555674c4aa7bdb11e841a06e28ec4d055406"
+    },
+    {
+      "league": "de.1",
+      "path": "data/2025-26-de.1.json",
+      "sha256": "65df0c83789da1be41dbe8ec83dddfa56cd8c49ecd49a3f11bc1e460ef4f4349"
+    }
+  ],
+  "leagues": [
+    {
+      "league": "en.1",
+      "validationN": 77,
+      "testN": 78,
+      "validationStart": "2026-01-25",
+      "testStart": "2026-03-21",
+      "testEnd": "2026-05-24",
+      "temperature": 1.5,
+      "baselineBrier": 0.6149678683615141,
+      "candidateBrier": 0.6249168404756524,
+      "baselineLogloss": 1.0273590444271004,
+      "candidateLogloss": 1.0400932156428409,
+      "tuning": [
+        {
+          "temperature": 1.5,
+          "logloss": 1.099673842809618
+        },
+        {
+          "temperature": 1.2,
+          "logloss": 1.1077180987695159
+        },
+        {
+          "temperature": 1,
+          "logloss": 1.1188642672623244
+        },
+        {
+          "temperature": 0.8,
+          "logloss": 1.1412649553070582
+        }
+      ]
+    },
+    {
+      "league": "fr.1",
+      "validationN": 62,
+      "testN": 62,
+      "validationStart": "2026-02-07",
+      "testStart": "2026-04-04",
+      "testEnd": "2026-05-17",
+      "temperature": 1,
+      "baselineBrier": 0.6515113143773613,
+      "candidateBrier": 0.6515113143773613,
+      "baselineLogloss": 1.0729593830375044,
+      "candidateLogloss": 1.0729593830375042,
+      "tuning": [
+        {
+          "temperature": 1,
+          "logloss": 1.0241788383387072
+        },
+        {
+          "temperature": 0.8,
+          "logloss": 1.0254556292036965
+        },
+        {
+          "temperature": 1.2,
+          "logloss": 1.0275447181580095
+        },
+        {
+          "temperature": 1.5,
+          "logloss": 1.0344498493365346
+        }
+      ]
+    },
+    {
+      "league": "es.1",
+      "validationN": 73,
+      "testN": 79,
+      "validationStart": "2026-02-13",
+      "testStart": "2026-04-11",
+      "testEnd": "2026-05-24",
+      "temperature": 0.8,
+      "baselineBrier": 0.5957068166661581,
+      "candidateBrier": 0.5929967652141882,
+      "baselineLogloss": 1.0002069814526913,
+      "candidateLogloss": 0.9961312346852955,
+      "tuning": [
+        {
+          "temperature": 0.8,
+          "logloss": 1.0017102830705078
+        },
+        {
+          "temperature": 1,
+          "logloss": 1.0026752330761168
+        },
+        {
+          "temperature": 1.2,
+          "logloss": 1.0082087194090077
+        },
+        {
+          "temperature": 1.5,
+          "logloss": 1.0178494952203094
+        }
+      ]
+    },
+    {
+      "league": "it.1",
+      "validationN": 75,
+      "testN": 77,
+      "validationStart": "2026-02-02",
+      "testStart": "2026-04-05",
+      "testEnd": "2026-05-24",
+      "temperature": 0.8,
+      "baselineBrier": 0.6157870404674102,
+      "candidateBrier": 0.6141906860829774,
+      "baselineLogloss": 1.0261182667003308,
+      "candidateLogloss": 1.02475650755455,
+      "tuning": [
+        {
+          "temperature": 0.8,
+          "logloss": 0.9846934991283888
+        },
+        {
+          "temperature": 1,
+          "logloss": 0.9945108113107766
+        },
+        {
+          "temperature": 1.2,
+          "logloss": 1.004591045890425
+        },
+        {
+          "temperature": 1.5,
+          "logloss": 1.0175706492975904
+        }
+      ]
+    },
+    {
+      "league": "de.1",
+      "validationN": 63,
+      "testN": 63,
+      "validationStart": "2026-02-07",
+      "testStart": "2026-04-04",
+      "testEnd": "2026-05-16",
+      "temperature": 0.8,
+      "baselineBrier": 0.6193826116849009,
+      "candidateBrier": 0.6231587341058515,
+      "baselineLogloss": 1.0327056423098724,
+      "candidateLogloss": 1.0396458636462902,
+      "tuning": [
+        {
+          "temperature": 0.8,
+          "logloss": 0.9900191676803829
+        },
+        {
+          "temperature": 1,
+          "logloss": 0.9912478665210178
+        },
+        {
+          "temperature": 1.2,
+          "logloss": 0.9975185227958053
+        },
+        {
+          "temperature": 1.5,
+          "logloss": 1.0083657790583433
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "n": 359,
+    "baselineBrier": 0.6179909203129815,
+    "candidateBrier": 0.619876441719989,
+    "baselineLogloss": 1.0299314784118356,
+    "candidateLogloss": 1.0327271883008968,
+    "loglossDifferenceInterval": [
+      -0.005514636138321127,
+      0.011888293755825166
+    ],
+    "intervalMethod": "Bootstrap apparié par journée calendaire, 2 000 réplications, graine fixe. Dépendances entre journées non modélisées."
+  },
+  "profit": null,
+  "conclusion": "Aucun changement automatique du moteur. Une amélioration des probabilités ne démontre pas de profit ; cotes historiques contemporaines absentes."
+}
